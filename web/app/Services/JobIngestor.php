@@ -11,7 +11,26 @@ use Illuminate\Support\Str;
  */
 class JobIngestor
 {
+    /** Abaixo disso consideramos que a vaga só tem o resumo da página de busca. */
+    public const SHORT_DESCRIPTION = 400;
+
     public function __construct(private JobClassifier $classifier) {}
+
+    /**
+     * Das URLs informadas, devolve as que o coletor deve abrir para pegar a descrição completa:
+     * vagas novas ou que estão salvas só com o resumo.
+     *
+     * @param  list<string>  $urls
+     * @return list<string>
+     */
+    public function pendingDescriptions(array $urls): array
+    {
+        $complete = JobPosting::whereIn('url', $urls)
+            ->whereRaw('length(description) >= ?', [self::SHORT_DESCRIPTION])
+            ->pluck('url')->all();
+
+        return array_values(array_diff($urls, $complete));
+    }
 
     /**
      * @param  list<array{source: string, url: string, title: string, company?: ?string, location?: ?string, remote?: bool, description?: ?string, posted_at?: ?string}>  $items
@@ -19,7 +38,7 @@ class JobIngestor
      */
     public function ingest(array $items): array
     {
-        $stats = ['created' => 0, 'duplicated' => 0, 'ignored' => 0];
+        $stats = ['created' => 0, 'updated' => 0, 'duplicated' => 0, 'ignored' => 0];
 
         foreach ($items as $item) {
             if (! $this->classifier->isTech($item['title'])) {
@@ -28,14 +47,26 @@ class JobIngestor
                 continue;
             }
 
+            $description = trim(strip_tags($item['description'] ?? ''));
             $fingerprint = self::fingerprint($item['title'], $item['company'] ?? '', $item['location'] ?? '');
-            if (JobPosting::where('fingerprint', $fingerprint)->orWhere('url', $item['url'])->exists()) {
-                $stats['duplicated']++;
+            $existing = JobPosting::where('url', $item['url'])->first() ?? JobPosting::where('fingerprint', $fingerprint)->first();
+
+            if ($existing) {
+                // Mesma vaga, mas agora com a descrição completa: completa a que estava só com resumo.
+                if ($existing->url === $item['url'] && mb_strlen((string) $existing->description) < self::SHORT_DESCRIPTION && mb_strlen($description) > mb_strlen((string) $existing->description)) {
+                    $existing->update([
+                        'description' => $description,
+                        'summary' => Str::limit(preg_replace('/\s+/', ' ', $description), 280),
+                        ...$this->classifier->classify($existing->title, $description),
+                    ]);
+                    $stats['updated']++;
+                } else {
+                    $stats['duplicated']++;
+                }
 
                 continue;
             }
 
-            $description = trim(strip_tags($item['description'] ?? ''));
             JobPosting::create([
                 'source' => $item['source'],
                 'url' => $item['url'],

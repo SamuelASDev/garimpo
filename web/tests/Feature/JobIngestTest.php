@@ -43,12 +43,35 @@ class JobIngestTest extends TestCase
             $this->job(['url' => 'https://url&quebrada.gupy.io/job/3', 'title' => 'Dev Java']),
         ]], ['Authorization' => 'Bearer segredo']);
 
-        $response->assertOk()->assertExactJson(['created' => 1, 'duplicated' => 1, 'ignored' => 1, 'invalid' => 1]);
+        $response->assertOk()->assertExactJson(['created' => 1, 'updated' => 0, 'duplicated' => 1, 'ignored' => 1, 'invalid' => 1]);
 
         $job = JobPosting::sole();
         $this->assertSame('pleno', $job->seniority);
         $this->assertSame('dev', $job->area);
         $this->assertEqualsCanonicalizing(['PHP', 'Laravel', 'MySQL', 'Docker', 'Git'], $job->techs);
+    }
+
+    public function test_short_descriptions_are_reported_as_pending_and_completed_later(): void
+    {
+        config(['services.ingest.token' => 'segredo']);
+        $auth = ['Authorization' => 'Bearer segredo'];
+        $full = str_repeat('Requisitos: Laravel, Docker e AWS. ', 20);
+
+        $this->postJson('/api/ingest', ['jobs' => [
+            $this->job(['description' => 'Resumo curto.']),
+            $this->job(['url' => 'https://empresa.gupy.io/jobs/2', 'title' => 'Dev Java', 'description' => $full]),
+        ]], $auth)->assertOk();
+
+        $this->postJson('/api/ingest/pending', ['urls' => ['https://empresa.gupy.io/jobs/1', 'https://empresa.gupy.io/jobs/2', 'https://nova.test/3']], $auth)
+            ->assertOk()->assertExactJson(['urls' => ['https://empresa.gupy.io/jobs/1', 'https://nova.test/3']]);
+
+        $this->postJson('/api/ingest', ['jobs' => [$this->job(['description' => $full])]], $auth)
+            ->assertOk()->assertJsonPath('updated', 1);
+
+        $job = JobPosting::where('url', 'https://empresa.gupy.io/jobs/1')->sole();
+        $this->assertStringContainsString('Docker', $job->description);
+        $this->assertContains('AWS', $job->techs);
+        $this->postJson('/api/ingest/pending', ['urls' => ['https://empresa.gupy.io/jobs/1']])->assertUnauthorized();
     }
 
     public function test_job_page_shows_ats_match_for_user_with_resume(): void

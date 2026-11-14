@@ -252,7 +252,8 @@ def jobspy() -> list[dict]:
     for term in ["desenvolvedor", "suporte técnico ti", "analista de dados"]:
         try:
             df = scrape_jobs(site_name=["linkedin", "indeed"], search_term=term, location="Brazil",
-                             country_indeed="brazil", results_wanted=30, hours_old=48)
+                             country_indeed="brazil", results_wanted=30, hours_old=48,
+                             linkedin_fetch_description=True)
         except Exception as exc:
             print(f"[jobspy] {term}: {exc}", file=sys.stderr)
             continue
@@ -271,17 +272,79 @@ def jobspy() -> list[dict]:
     return jobs
 
 
-def send(jobs: list[dict]) -> None:
-    url, token = os.environ["INGEST_URL"], os.environ["INGEST_TOKEN"]
-    for i in range(0, len(jobs), 200):
-        body = json.dumps({"jobs": jobs[i:i + 200]}).encode()
-        req = urllib.request.Request(url, data=body, method="POST", headers={
-            "Content-Type": "application/json", "Accept": "application/json",
-            "Authorization": f"Bearer {token}", "User-Agent": USER_AGENT,
-        })
+# Sites cuja página de busca só traz um resumo: a descrição completa fica na página da vaga.
+DETAIL_SOURCES = {"programathor", "vagas.com", "infojobs"}
+
+
+def text_block(fragment: str) -> str:
+    """Como text(), mas mantém quebras de linha de parágrafos, listas e <br>."""
+    fragment = re.sub(r"(?i)<br\s*/?>|</p>|</li>|</h\d>|</div>", "\n", fragment)
+    fragment = re.sub(r"(?i)<li[^>]*>", "\n• ", fragment)
+    plain = html.unescape(re.sub(r"<[^>]+>", " ", fragment))
+    lines = [re.sub(r"[ \t\xa0]+", " ", line).strip() for line in plain.splitlines()]
+    return re.sub(r"\n{3,}", "\n\n", "\n".join(lines)).strip()
+
+
+def detail_description(job: dict) -> str:
+    """Abre a página da vaga e devolve a descrição completa ("" se não conseguir)."""
+    page = get(job["url"])
+    if job["source"] == "programathor":
+        start = page.find("<!-- Content job offer -->")
+        end = page.find('<div class="hidden-xs hidden-sm text-center">', start)
+        return text_block(page[start:end]) if start >= 0 and end > start else ""
+    # Vagas.com e InfoJobs publicam a vaga em JSON-LD (schema.org/JobPosting), o formato do Google Vagas.
+    for block in re.findall(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', page, re.S):
         try:
-            with urllib.request.urlopen(req, timeout=120) as resp:
-                print("lote", i // 200 + 1, resp.read().decode())
+            data = json.loads(block)
+        except ValueError:
+            continue
+        items = data if isinstance(data, list) else data.get("@graph", [data])
+        for item in items:
+            if isinstance(item, dict) and item.get("@type") == "JobPosting" and item.get("description"):
+                return text_block(html.unescape(item["description"]))
+    return ""
+
+
+def api(path: str, payload: dict) -> dict:
+    """POST autenticado para o site (INGEST_URL termina em /api/ingest)."""
+    req = urllib.request.Request(os.environ["INGEST_URL"] + path, data=json.dumps(payload).encode(), method="POST", headers={
+        "Content-Type": "application/json", "Accept": "application/json",
+        "Authorization": f"Bearer {os.environ['INGEST_TOKEN']}", "User-Agent": USER_AGENT,
+    })
+    with urllib.request.urlopen(req, timeout=120) as resp:
+        return json.loads(resp.read().decode())
+
+
+def enrich(jobs: list[dict]) -> None:
+    """Busca a descrição completa só das vagas que o site ainda não tem completas."""
+    candidates = [j for j in jobs if j["source"] in DETAIL_SOURCES]
+    if not candidates:
+        return
+    try:
+        pending = set(api("/pending", {"urls": [j["url"] for j in candidates]})["urls"])
+    except Exception as exc:
+        print(f"[detalhes] não consegui consultar o site: {exc}", file=sys.stderr)
+        return
+    done = 0
+    for job in candidates:
+        if job["url"] not in pending:
+            continue
+        try:
+            description = detail_description(job)
+        except Exception as exc:
+            print(f"[detalhes] {job['url']}: {exc}", file=sys.stderr)
+            continue
+        if len(description) > len(job.get("description") or ""):
+            job["description"] = description
+            done += 1
+        time.sleep(1)
+    print(f"[detalhes] {done} descrições completas de {len(pending)} vagas pendentes")
+
+
+def send(jobs: list[dict]) -> None:
+    for i in range(0, len(jobs), 200):
+        try:
+            print("lote", i // 200 + 1, api("", {"jobs": jobs[i:i + 200]}))
         except urllib.error.HTTPError as exc:
             print("lote", i // 200 + 1, "falhou:", exc.code, exc.read().decode()[:500], file=sys.stderr)
 
@@ -295,6 +358,7 @@ def main() -> None:
     print(f"{len(unique)} vagas coletadas")
     if os.getenv("DRY_RUN") == "1":
         return
+    enrich(unique)
     send(unique)
 
 

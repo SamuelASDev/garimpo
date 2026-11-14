@@ -9,15 +9,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 /**
- * Endpoint usado pelo coletor Python (GitHub Actions) para enviar vagas.
+ * Endpoints usados pelo coletor Python (GitHub Actions) para enviar vagas.
  */
 class IngestController extends Controller
 {
     public function __invoke(Request $request, JobIngestor $ingestor): JsonResponse
     {
-        $token = (string) config('services.ingest.token');
-        abort_unless($token !== '' && hash_equals($token, (string) $request->bearerToken()), 401);
-
+        $this->authorizeCollector($request);
         $request->validate(['jobs' => ['required', 'array', 'max:500']]);
 
         $rules = [
@@ -39,5 +37,20 @@ class IngestController extends Controller
             ...$ingestor->ingest($valid->all()),
             'invalid' => count($request->input('jobs')) - $valid->count(),
         ]);
+    }
+
+    /** Quais destas URLs ainda precisam da descrição completa (novas ou só com resumo). */
+    public function pending(Request $request, JobIngestor $ingestor): JsonResponse
+    {
+        $this->authorizeCollector($request);
+        $data = $request->validate(['urls' => ['required', 'array', 'max:3000'], 'urls.*' => ['string', 'max:1000']]);
+
+        return response()->json(['urls' => $ingestor->pendingDescriptions($data['urls'])]);
+    }
+
+    private function authorizeCollector(Request $request): void
+    {
+        $token = (string) config('services.ingest.token');
+        abort_unless($token !== '' && hash_equals($token, (string) $request->bearerToken()), 401);
     }
 }

@@ -1,5 +1,5 @@
 @php
-    $labels = ['estagio' => 'Estágio', 'junior' => 'Júnior', 'pleno' => 'Pleno', 'senior' => 'Sênior', 'especialista' => 'Especialista',
+    $labels = ['estagio' => 'Estágio / Trainee', 'junior' => 'Júnior', 'pleno' => 'Pleno', 'senior' => 'Sênior', 'especialista' => 'Especialista',
         'dev' => 'Desenvolvimento', 'suporte' => 'Suporte', 'infra' => 'Infra/DevOps', 'dados' => 'Dados', 'qa' => 'QA/Testes',
         'seguranca' => 'Segurança', 'mobile' => 'Mobile', 'design' => 'UX/UI', 'gestao' => 'Gestão/Produto'];
 @endphp
@@ -8,8 +8,8 @@
         <h1 class="text-2xl font-bold text-gray-900">Vagas de TI</h1>
         <p class="text-gray-500 mt-1">{{ $jobs->total() }} vagas reunidas de vários sites. Filtre e veja o quanto seu currículo combina com cada uma.</p>
 
-        <form method="GET" class="mt-6 grid gap-3 sm:grid-cols-6 bg-white p-4 rounded-xl border border-gray-200">
-            <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cargo ou empresa" class="sm:col-span-2 rounded-lg border-gray-300 text-sm">
+        <form method="GET" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr_auto] bg-white p-4 rounded-xl border border-gray-200">
+            <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cargo ou empresa" class="sm:col-span-2 lg:col-span-1 rounded-lg border-gray-300 text-sm">
             <select name="seniority" class="rounded-lg border-gray-300 text-sm">
                 <option value="">Senioridade</option>
                 @foreach ($seniorities as $s)
@@ -28,7 +28,7 @@
                     <option value="{{ $t }}" @selected(($filters['tech'] ?? '') === $t)>{{ $t }}</option>
                 @endforeach
             </select>
-            <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center justify-between sm:justify-end gap-3 sm:col-span-2 lg:col-span-1">
                 <label class="flex items-center gap-2 text-sm text-gray-600">
                     <input type="checkbox" name="remote" value="1" @checked($filters['remote'] ?? false) class="rounded border-gray-300 text-emerald-600"> Remoto
                 </label>
