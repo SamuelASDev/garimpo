@@ -15,15 +15,22 @@ class JobPosting extends Model
         return ['techs' => 'array', 'remote' => 'boolean', 'posted_at' => 'datetime'];
     }
 
-    /** Aplica filtros vindos da querystring (q, seniority, area, tech, remote). */
+    /**
+     * Aplica filtros vindos da querystring (q, seniority, area, tech, remote).
+     * "tech" pode ser uma tecnologia ou uma lista: a vaga precisa ter TODAS as marcadas.
+     */
     public function scopeFilter(Builder $query, array $f): Builder
     {
+        $techs = array_intersect((array) ($f['tech'] ?? []), array_keys(JobClassifier::TECHS));
+        foreach ($techs as $tech) {
+            $query->where('techs', 'like', '%'.json_encode($tech).'%');
+        }
+
         return $query
             ->when($f['q'] ?? null, fn ($q, $v) => $q->where(fn ($w) => $w
                 ->where('title', 'like', "%$v%")->orWhere('company', 'like', "%$v%")))
             ->when($f['seniority'] ?? null, fn ($q, $v) => $q->where('seniority', $v))
             ->when($f['area'] ?? null, fn ($q, $v) => $q->where('area', $v))
-            ->when(in_array($f['tech'] ?? null, array_keys(JobClassifier::TECHS), true), fn ($q) => $q->where('techs', 'like', '%'.json_encode($f['tech']).'%'))
             ->when($f['remote'] ?? null, fn ($q) => $q->where('remote', true));
     }
 }

@@ -74,6 +74,17 @@ class JobIngestTest extends TestCase
         $this->postJson('/api/ingest/pending', ['urls' => ['https://empresa.gupy.io/jobs/1']])->assertUnauthorized();
     }
 
+    public function test_filter_by_several_techs_requires_all_of_them(): void
+    {
+        foreach ([['PHP', 'Docker'], ['PHP'], ['Docker', 'AWS']] as $i => $techs) {
+            JobPosting::create(['source' => 'gupy', 'url' => "https://x.test/$i", 'fingerprint' => "f$i", 'title' => 'Vaga '.implode(' ', $techs), 'techs' => $techs]);
+        }
+
+        $this->get('/?tech[]=PHP&tech[]=Docker')->assertOk()
+            ->assertSee('Vaga PHP Docker')->assertDontSee('Vaga PHP</h2>', false)->assertDontSee('Vaga Docker AWS');
+        $this->get('/?tech=PHP')->assertOk()->assertSee('Vaga PHP Docker')->assertSee('Vaga PHP</h2>', false);
+    }
+
     public function test_job_page_shows_ats_match_for_user_with_resume(): void
     {
         $job = JobPosting::create([

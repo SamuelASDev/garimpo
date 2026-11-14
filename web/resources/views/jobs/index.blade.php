@@ -22,12 +22,27 @@
                     <option value="{{ $a }}" @selected(($filters['area'] ?? '') === $a)>{{ $labels[$a] }}</option>
                 @endforeach
             </select>
-            <select name="tech" class="rounded-lg border-gray-300 text-sm">
-                <option value="">Tecnologia</option>
-                @foreach ($techs as $t)
-                    <option value="{{ $t }}" @selected(($filters['tech'] ?? '') === $t)>{{ $t }}</option>
-                @endforeach
-            </select>
+            {{-- Várias tecnologias: a vaga precisa ter todas as marcadas --}}
+            <div class="relative" x-data="{ open: false, busca: '', marcadas: @js(array_values(array_intersect((array) ($filters['tech'] ?? []), $techs))) }" @click.outside="open = false" @keydown.escape="open = false">
+                <button type="button" @click="open = !open" class="w-full h-full min-h-[38px] flex items-center justify-between gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm text-left">
+                    <span class="truncate" :class="marcadas.length ? 'text-gray-900' : 'text-gray-500'" x-text="marcadas.length ? marcadas.join(' + ') : 'Tecnologias'"></span>
+                    <span x-show="marcadas.length" x-cloak class="shrink-0 px-1.5 rounded-full bg-emerald-600 text-white text-xs" x-text="marcadas.length"></span>
+                </button>
+                <div x-show="open" x-cloak x-transition class="absolute z-20 mt-1 w-64 max-w-[calc(100vw-2rem)] bg-white border border-gray-200 rounded-xl shadow-lg p-2">
+                    <input x-model="busca" placeholder="Buscar tecnologia…" class="w-full mb-2 rounded-lg border-gray-300 text-sm">
+                    <div class="max-h-64 overflow-y-auto">
+                        @foreach ($techs as $t)
+                            <label x-show="@js(Str::lower($t)).includes(busca.toLowerCase())" class="flex items-center gap-2 px-2 py-1.5 rounded-md text-sm hover:bg-gray-50 cursor-pointer">
+                                <input type="checkbox" name="tech[]" value="{{ $t }}" x-model="marcadas" class="rounded border-gray-300 text-emerald-600"> {{ $t }}
+                            </label>
+                        @endforeach
+                    </div>
+                    <div class="flex justify-between gap-2 border-t border-gray-100 mt-2 pt-2">
+                        <button type="button" @click="marcadas = []" class="text-xs text-gray-500 hover:text-gray-800">Limpar</button>
+                        <button class="px-3 py-1 rounded-md bg-emerald-600 text-white text-xs hover:bg-emerald-700">Aplicar</button>
+                    </div>
+                </div>
+            </div>
             <div class="flex items-center justify-between sm:justify-end gap-3 sm:col-span-2 lg:col-span-1">
                 <label class="flex items-center gap-2 text-sm text-gray-600">
                     <input type="checkbox" name="remote" value="1" @checked($filters['remote'] ?? false) class="rounded border-gray-300 text-emerald-600"> Remoto
