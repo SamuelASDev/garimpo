@@ -245,6 +245,7 @@ GARIMPO_PRIVACY_EMAIL=privacidade@seudominio.com.br
 php artisan migrate --force
 php artisan passport:keys
 php artisan passport:client --personal --name=Garimpo --provider=users
+chmod 660 storage/oauth-private.key storage/oauth-public.key
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
@@ -340,6 +341,7 @@ Se mudou CSS/JS, gere de novo o `public/build` no seu computador e envie.
 | `composer install` reclama da versão do PHP | O projeto precisa de PHP **8.3+**. No hPanel, troque a versão do PHP. |
 | Erro com `sodium` ou `lcobucci/jwt` | Ligue a extensão `sodium` (no XAMPP: tire o `;` de `extension=sodium` no `php.ini`). |
 | Página sem estilo / erro "Vite manifest not found" | Falta a pasta `public/build`: rode `npm run build` e envie. |
+| `/mcp` dá erro 500: "Key file ... permissions are not correct" | As chaves do OAuth não podem ficar abertas: `chmod 660 storage/oauth-private.key storage/oauth-public.key`. Não use `chmod -R 775` na pasta `storage`. |
 | "Personal access client not found" ao gerar token | Rode `php artisan passport:client --personal --name=Garimpo --provider=users`. |
 | Erro 500 sem detalhes em produção | Veja `web/storage/logs/laravel.log`. |
 | Abre a lista de arquivos ou "404" na raiz do subdomínio | Confira se o `.htaccess` da raiz do repositório foi junto (arquivos com ponto ficam ocultos no Gerenciador de Arquivos). |
