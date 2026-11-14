@@ -393,6 +393,7 @@ DETAIL_SOURCES = {"programathor", "vagas.com", "infojobs", "empregos.com", "rand
 
 def text_block(fragment: str) -> str:
     """Como text(), mas mantém quebras de linha de parágrafos, listas e <br>."""
+    fragment = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", fragment)  # ex.: JSON-LD dentro do bloco da vaga
     fragment = re.sub(r"(?i)<br\s*/?>|</p>|</li>|</h\d>|</div>", "\n", fragment)
     fragment = re.sub(r"(?i)<li[^>]*>", "\n• ", fragment)
     plain = html.unescape(re.sub(r"<[^>]+>", " ", fragment))

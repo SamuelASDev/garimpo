@@ -33,7 +33,10 @@
                 </div>
 
                 <h2 class="mt-8 text-sm font-semibold uppercase tracking-wide text-gray-400">Descrição da vaga</h2>
-                <div class="mt-2 text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ $job->description ?: $job->summary }}</div>
+                {{-- HTML gerado por Markdown com HTML cru bloqueado (JobDescriptionFormatter::toHtml) --}}
+                <div class="mt-2 text-sm text-gray-700 leading-relaxed space-y-3 [&_h4]:mt-5 [&_h4]:font-semibold [&_h4]:text-gray-900 [&_ul]:list-disc [&_ul]:ps-5 [&_ul]:space-y-1 [&_ol]:list-decimal [&_ol]:ps-5 [&_strong]:text-gray-900 [&_li_p]:m-0 break-words">
+                    {!! \App\Services\JobDescriptionFormatter::toHtml($job->description ?: (string) $job->summary) !!}
+                </div>
                 @if (mb_strlen((string) $job->description) < 400)
                     <p class="mt-4 text-xs text-gray-400">O site de origem só mostra um resumo. Veja a descrição completa no link da vaga.</p>
                 @endif

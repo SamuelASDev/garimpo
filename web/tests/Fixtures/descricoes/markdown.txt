@@ -1,0 +1,22 @@
+Descrição da vaga
+Descrição da empresa
+
+Aqui na Inovando já desenvolvemos 50+ projetos novos utilizando Node.js, React.js e React Native. Também trabalhos com os Stacks .NET, Angular, PHP e Vue.JS.
+
+Atividades e Responsabilidades
+
+* Desenvolvimento de novas funcionalidades,
+
+* Analise de código
+
+## Requisitos
+
+**Obrigatórios:**
+
+- Minimo 3 anos de experiência com desenvolvimento .NET / .NETCORE .
+
+- Conhecimentos em Github/Gitlab, PowerShell e SharePoint
+
+**Desejáveis:**
+
+- VB.NET

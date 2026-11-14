@@ -49,7 +49,7 @@ class JobIngestor
             }
 
             // LGPD: e-mail/telefone de recrutadores não ficam no Garimpo (o anúncio original continua com eles).
-            $description = ContactMasker::strip(trim(strip_tags($item['description'] ?? '')));
+            $description = ContactMasker::strip(self::cleanDescription($item['description'] ?? ''));
             $fingerprint = self::fingerprint($item['title'], $item['company'] ?? '', $item['location'] ?? '');
             $existing = JobPosting::where('url', $item['url'])->first() ?? JobPosting::where('fingerprint', $fingerprint)->first();
 
@@ -86,6 +86,15 @@ class JobIngestor
         }
 
         return $stats;
+    }
+
+    /** HTML/texto bruto da fonte -> texto com quebras de linha certas (sem grudar parágrafos e itens). */
+    public static function cleanDescription(string $raw): string
+    {
+        $raw = preg_replace('~<(script|style)\b.*?</\1>~is', ' ', $raw);
+        $raw = preg_replace(['~<br\s*/?>|</(p|div|h\d|li|tr)>~i', '~<li[^>]*>~i'], ["\n", "\n- "], $raw);
+
+        return JobDescriptionFormatter::normalize(strip_tags($raw));
     }
 
     /** Mesma vaga em fontes diferentes gera o mesmo hash (minúsculas, sem acento, sem pontuação). */
