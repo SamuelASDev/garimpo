@@ -1,0 +1,26 @@
+# Hospedagem compartilhada (Hostinger etc.): o subdomínio aponta para a pasta do repositório
+# e este arquivo manda tudo para web/public, onde fica o index.php do Laravel.
+# Se puder apontar o subdomínio direto para web/public, este arquivo nem é usado.
+
+<IfModule mod_rewrite.c>
+    Options -MultiViews -Indexes
+    RewriteEngine On
+
+    # Repassa o cabeçalho Authorization (tokens do coletor e das IAs conectadas pelo MCP).
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Tudo vai para web/public; o web/public/.htaccess do Laravel cuida do resto.
+    RewriteCond %{REQUEST_URI} !^/web/public/
+    RewriteRule ^(.*)$ web/public/$1 [L]
+</IfModule>
+
+# Segurança: se o rewrite não estiver disponível, nada do projeto fica exposto.
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
+
+# Segurança extra: arquivos sensíveis nunca são servidos (.env, .git, banco, chaves, logs, código-fonte de config).
+<FilesMatch "^\.(env|git|htpasswd)|\.(sqlite|key|log|md|yml|yaml|py|lock)$|^(composer|package|package-lock)\.json$|^artisan$">
+    Require all denied
+</FilesMatch>

@@ -177,8 +177,10 @@ Funciona no plano de hospedagem compartilhada (Premium/Business), com SSH.
 
 ### 1. Preparar no hPanel
 
-1. **Subdomínio**: hPanel → Domínios → Subdomínios → crie (ex.: `garimpo.seudominio.com.br`).
-   Na pasta do subdomínio, use um caminho como `public_html/garimpo/web/public` (o site é servido pela pasta `public`).
+1. **Subdomínio**: hPanel → Domínios → Subdomínios → crie (ex.: `garimpo.seudominio.com.br`) com a pasta
+   `public_html/garimpo` (onde você vai clonar o repositório). O `.htaccess` da raiz do repositório encaminha tudo
+   para `web/public` e bloqueia arquivos sensíveis (`.env`, `.git`, banco, chaves). Se o hPanel deixar escolher a
+   pasta `public_html/garimpo/web/public` direto, também funciona (e o `.htaccess` da raiz nem é usado).
 2. **PHP**: hPanel → Avançado → Configuração do PHP → versão **8.4 ou mais nova**, com `sodium` ligado.
 3. **Banco MySQL**: hPanel → Bancos de dados → crie banco, usuário e senha.
 4. **SSL**: ative o certificado gratuito para o subdomínio (o site precisa de HTTPS).
@@ -340,6 +342,8 @@ Se mudou CSS/JS, gere de novo o `public/build` no seu computador e envie.
 | Página sem estilo / erro "Vite manifest not found" | Falta a pasta `public/build`: rode `npm run build` e envie. |
 | "Personal access client not found" ao gerar token | Rode `php artisan passport:client --personal --name=Garimpo --provider=users`. |
 | Erro 500 sem detalhes em produção | Veja `web/storage/logs/laravel.log`. |
+| Abre a lista de arquivos ou "404" na raiz do subdomínio | Confira se o `.htaccess` da raiz do repositório foi junto (arquivos com ponto ficam ocultos no Gerenciador de Arquivos). |
+| Coletor ou IA conectada recebem 401 mesmo com o token certo | A hospedagem está descartando o cabeçalho `Authorization`; o `.htaccess` da raiz já repassa, confira se ele está lá. |
 | Mudei o `.env` e nada mudou | Rode `php artisan config:cache` de novo. |
 | Coletor responde 401 | O `INGEST_TOKEN` do GitHub está diferente do `.env` do servidor. |
 | IA diz que está indisponível | Confira `GROQ_API_KEY` e se a pessoa autorizou a IA em Minha conta → Privacidade. |
