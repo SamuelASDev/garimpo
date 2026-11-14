@@ -177,6 +177,121 @@ def gupy() -> list[dict]:
     return jobs
 
 
+def empregos_com() -> list[dict]:
+    """Empregos.com.br: lista pública por termo (descrição completa vem depois, pelo JSON-LD da vaga)."""
+    jobs = []
+    for term in SHORT_TERMS:
+        try:
+            page_html = get("https://www.empregos.com.br/vagas/" + term.replace(" ", "-"))
+        except Exception as exc:
+            print(f"[empregos] {term}: {exc}", file=sys.stderr)
+            continue
+        for chunk in page_html.split('id="job-card"')[1:]:
+            href = re.search(r'href="(/vaga/\d+/[^"]+)"', chunk)
+            title = find(r"<h2[^>]*>(.*?)</h2>", chunk)
+            if not (href and title):
+                continue
+            company = find(r"<h3>(.*?)</h3>", chunk)
+            jobs.append({
+                "source": "empregos.com",
+                "url": "https://www.empregos.com.br" + href.group(1),
+                "title": title,
+                "company": None if not company or company.endswith("...") else company,
+                "location": None,
+                "remote": "home office" in chunk.lower() or "remoto" in chunk.lower(),
+                "description": "",
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def robert_half() -> list[dict]:
+    """Robert Half: a lista pública já traz a descrição completa no card."""
+    jobs = []
+    for page in (1, 2):
+        try:
+            page_html = get(f"https://www.roberthalf.com/br/pt/vagas?page={page}")
+        except Exception as exc:
+            print(f"[roberthalf] página {page}: {exc}", file=sys.stderr)
+            break
+        for chunk in page_html.split("<rhcl-job-card")[1:]:
+            link = re.search(r'href="(https://www\.roberthalf\.com/br/pt/vaga/[^"]+)"[^>]*>(.*?)</a>', chunk, re.S)
+            if not link:
+                continue
+            worksite = find(r'data-subslot="worksite">(.*?)</li>', chunk).lower()
+            jobs.append({
+                "source": "roberthalf",
+                "url": urllib.parse.quote(link.group(1), safe=":/?&=#%"),  # URL tem acentos (são-paulo)
+                "title": text(link.group(2)),
+                "company": "Robert Half (cliente confidencial)",
+                "location": find(r'data-subslot="location">(.*?)</li>', chunk).strip(" ,") or None,
+                "remote": worksite == "remote",
+                "description": text_block(html.unescape(find_raw(r'data-subslot="copy">(.*?)</li>', chunk))),
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def michael_page() -> list[dict]:
+    """Michael Page: área de tecnologia (descrição completa vem depois, pela página da vaga)."""
+    jobs = []
+    for page in (0, 1):
+        try:
+            page_html = get(f"https://www.michaelpage.com.br/jobs/tecnologia?page={page}")
+        except Exception as exc:
+            print(f"[michaelpage] página {page}: {exc}", file=sys.stderr)
+            break
+        for chunk in page_html.split('class="job-tile')[1:]:
+            link = re.search(r'<h3><a href="(/job-detail/[^"]+)"[^>]*>(.*?)</a>', chunk, re.S)
+            if not link:
+                continue
+            location = find(r'class="job-location">(.*?)</div>', chunk)
+            jobs.append({
+                "source": "michaelpage",
+                "url": "https://www.michaelpage.com.br" + link.group(1),
+                "title": text(link.group(2)),
+                "company": "Michael Page (cliente confidencial)",
+                "location": location or None,
+                "remote": "remot" in location.lower(),
+                "description": find(r'class="job-summary">(.*?)</div>\s*</div>', chunk),
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def randstad() -> list[dict]:
+    """Randstad: lista pública por termo (descrição completa vem depois, pelo JSON-LD da vaga)."""
+    jobs = []
+    for term in SHORT_TERMS:
+        try:
+            page_html = get("https://www.randstad.com.br/vagas/q-" + term.replace(" ", "-") + "/")
+        except Exception as exc:
+            print(f"[randstad] {term}: {exc}", file=sys.stderr)
+            continue
+        for chunk in page_html.split('class="cards__item')[1:]:
+            link = re.search(r'href="(/vagas/[^"]+_\d+/)"[^>]*>(.*?)<span', chunk, re.S)
+            if not link:
+                continue
+            meta = re.findall(r'class="cards__meta-item">(.*?)</li>', chunk, re.S)
+            location = text(meta[0]) if meta else ""
+            jobs.append({
+                "source": "randstad",
+                "url": "https://www.randstad.com.br" + link.group(1),
+                "title": text(link.group(2)).capitalize(),
+                "company": "Randstad (cliente)",
+                "location": location.title() or None,
+                "remote": "remot" in chunk.lower() or "home office" in chunk.lower(),
+                "description": find(r'class="cards__description">(.*?)</div>', chunk),
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def find_raw(pattern: str, chunk: str) -> str:
+    m = re.search(pattern, chunk, re.S)
+    return m.group(1) if m else ""
+
+
 def jooble() -> list[dict]:
     """API oficial da Jooble. Cada chave vale para um país (host). Limite grátis: 100 chamadas/dia."""
     key = os.getenv("JOOBLE_API_KEY")
@@ -273,7 +388,7 @@ def jobspy() -> list[dict]:
 
 
 # Sites cuja página de busca só traz um resumo: a descrição completa fica na página da vaga.
-DETAIL_SOURCES = {"programathor", "vagas.com", "infojobs"}
+DETAIL_SOURCES = {"programathor", "vagas.com", "infojobs", "empregos.com", "randstad", "michaelpage"}
 
 
 def text_block(fragment: str) -> str:
@@ -286,13 +401,18 @@ def text_block(fragment: str) -> str:
 
 
 def detail_description(job: dict) -> str:
-    """Abre a página da vaga e devolve a descrição completa ("" se não conseguir)."""
+    """Abre a página da vaga e devolve a descrição completa ("" se não conseguir).
+    Pelo JSON-LD também completa empresa, local e data quando a lista não trouxe."""
     page = get(job["url"])
     if job["source"] == "programathor":
         start = page.find("<!-- Content job offer -->")
         end = page.find('<div class="hidden-xs hidden-sm text-center">', start)
         return text_block(page[start:end]) if start >= 0 and end > start else ""
-    # Vagas.com e InfoJobs publicam a vaga em JSON-LD (schema.org/JobPosting), o formato do Google Vagas.
+    if job["source"] == "michaelpage":
+        start = page.find('<div id="job-description">')
+        end = page.find('id="block-similar-jobs', start)
+        return text_block(page[start:end]) if start >= 0 and end > start else ""
+    # Vagas.com, InfoJobs, Empregos.com.br e Randstad publicam a vaga em JSON-LD (schema.org/JobPosting).
     for block in re.findall(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', page, re.S):
         try:
             data = json.loads(block)
@@ -300,8 +420,20 @@ def detail_description(job: dict) -> str:
             continue
         items = data if isinstance(data, list) else data.get("@graph", [data])
         for item in items:
-            if isinstance(item, dict) and item.get("@type") == "JobPosting" and item.get("description"):
-                return text_block(html.unescape(item["description"]))
+            if not (isinstance(item, dict) and item.get("@type") == "JobPosting" and item.get("description")):
+                continue
+            org = item.get("hiringOrganization")
+            if not job.get("company") and isinstance(org, dict) and org.get("name"):
+                job["company"] = str(org["name"])[:255]
+            place = item.get("jobLocation")
+            place = place[0] if isinstance(place, list) and place else place
+            address = place.get("address") if isinstance(place, dict) else None
+            if not job.get("location") and isinstance(address, dict):
+                parts = [address.get("addressLocality"), address.get("addressRegion")]
+                job["location"] = ", ".join(str(p) for p in parts if p) or None
+            if not job.get("posted_at") and item.get("datePosted"):
+                job["posted_at"] = str(item["datePosted"])[:25]
+            return text_block(html.unescape(item["description"]))
     return ""
 
 
@@ -353,7 +485,7 @@ def main() -> None:
     if not os.getenv("DRY_RUN") and not (os.getenv("INGEST_URL") and os.getenv("INGEST_TOKEN")):
         print("INGEST_URL/INGEST_TOKEN não configurados: nada a fazer (configure os secrets após o deploy).")
         return
-    jobs = gupy() + programathor() + vagas_com() + infojobs() + jooble() + adzuna() + jobspy()
+    jobs = gupy() + programathor() + vagas_com() + infojobs() + empregos_com() + robert_half() + michael_page() + randstad() + jooble() + adzuna() + jobspy()
     unique = list({j["url"]: j for j in jobs if j.get("url") and j.get("title")}.values())
     print(f"{len(unique)} vagas coletadas")
     if os.getenv("DRY_RUN") == "1":
