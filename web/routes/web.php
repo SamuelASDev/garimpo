@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AiConnectionController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\JobAlertController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LegalController;
@@ -15,6 +16,7 @@ Route::get('/', [JobController::class, 'index'])->name('jobs.index');
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
 Route::get('/privacidade', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/termos', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('/alertas/parar/{user}', [JobAlertController::class, 'unsubscribe'])->middleware('signed')->name('alerts.unsubscribe');
 
 Route::middleware('auth')->group(function () {
     Route::redirect('/dashboard', '/curriculos')->name('dashboard');
@@ -32,6 +34,11 @@ Route::middleware('auth')->group(function () {
     Route::delete('/vagas/{job}/curriculo', [JobController::class, 'destroyResume'])->name('jobs.resume.destroy');
     Route::post('/vagas/{job}/curriculo/assistente', [ResumeAssistantController::class, 'chat'])->middleware('throttle:20,1')->name('jobs.resume.assistant');
     Route::post('/vagas/{job}/candidatura', [JobApplicationController::class, 'storeFromJob'])->name('jobs.apply');
+
+    Route::get('/alertas', [JobAlertController::class, 'index'])->name('alerts.index');
+    Route::post('/alertas', [JobAlertController::class, 'store'])->middleware('throttle:20,1')->name('alerts.store');
+    Route::patch('/alertas/{alert}', [JobAlertController::class, 'update'])->name('alerts.update');
+    Route::delete('/alertas/{alert}', [JobAlertController::class, 'destroy'])->name('alerts.destroy');
 
     Route::get('/candidaturas', [JobApplicationController::class, 'index'])->name('applications.index');
     Route::post('/candidaturas', [JobApplicationController::class, 'store'])->name('applications.store');

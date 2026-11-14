@@ -51,6 +51,23 @@
             </div>
         </form>
 
+        {{-- Alerta por e-mail com os filtros aplicados --}}
+        @auth
+            <form method="POST" action="{{ route('alerts.store') }}" class="mt-3 flex flex-wrap items-center justify-end gap-2 text-sm" x-data="{ nome: false }">
+                @csrf
+                @foreach (array_filter($filters) as $key => $value)
+                    @foreach ((array) $value as $v)
+                        <input type="hidden" name="{{ $key }}{{ is_array($value) ? '[]' : '' }}" value="{{ $v }}">
+                    @endforeach
+                @endforeach
+                <input x-show="nome" x-cloak name="name" maxlength="80" placeholder="Nome do alerta (opcional)" class="rounded-lg border-gray-300 text-sm py-1.5">
+                <button type="button" x-show="!nome" @click="nome = true" class="text-gray-500 hover:text-gray-800">dar um nome</button>
+                <button class="px-3 py-1.5 rounded-lg border border-emerald-300 text-emerald-700 bg-white hover:bg-emerald-50">🔔 Me avise de vagas assim</button>
+            </form>
+        @else
+            <p class="mt-3 text-right text-sm"><a href="{{ route('register') }}" class="text-emerald-700 hover:underline">🔔 Crie uma conta para receber vagas assim por e-mail</a></p>
+        @endauth
+
         <div class="mt-6 space-y-3">
             @forelse ($jobs as $job)
                 <a href="{{ route('jobs.show', $job) }}" class="block bg-white rounded-xl border border-gray-200 p-5 hover:border-emerald-400 transition">

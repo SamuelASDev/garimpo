@@ -11,6 +11,7 @@
                     @auth
                         <x-nav-link :href="route('resumes.index')" :active="request()->routeIs('resume.*', 'resumes.*', 'jobs.resume')">Currículos</x-nav-link>
                         <x-nav-link :href="route('applications.index')" :active="request()->routeIs('applications.*')">Candidaturas</x-nav-link>
+                        <x-nav-link :href="route('alerts.index')" :active="request()->routeIs('alerts.*')">Alertas</x-nav-link>
                         <x-nav-link :href="route('ai.show')" :active="request()->routeIs('ai.*')">Conectar IA</x-nav-link>
                     @endauth
                 </div>
@@ -52,6 +53,7 @@
         @auth
             <x-responsive-nav-link :href="route('resumes.index')" :active="request()->routeIs('resume.*', 'resumes.*', 'jobs.resume')">Currículos</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('applications.index')" :active="request()->routeIs('applications.*')">Candidaturas</x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('alerts.index')" :active="request()->routeIs('alerts.*')">Alertas</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('ai.show')" :active="request()->routeIs('ai.*')">Conectar IA</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('profile.edit')">Minha conta</x-responsive-nav-link>
             <form method="POST" action="{{ route('logout') }}">

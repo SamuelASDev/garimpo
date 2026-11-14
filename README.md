@@ -7,6 +7,7 @@ e mostra o quanto o **seu currículo** combina com ela, do jeito que um ATS lê.
 - 🔎 Vagas de várias fontes, sem repetição, com link direto para a vaga original
 - 🏷️ Filtros por senioridade, área, tecnologia e remoto (classificação por regras, sem IA)
 - 📄 Score ATS: o que você já tem e o que falta no currículo para cada vaga
+- 🔔 Alertas por e-mail: monte filtros e receba as vagas novas 1 vez por dia
 - 🤖 Currículo adaptado com IA grátis (Gemini / Groq), sem inventar experiência
 
 ## Estrutura
@@ -64,6 +65,28 @@ php artisan passport:client --personal --name=Garimpo --provider=users
 ```
 
 As chaves ficam em `storage/oauth-*.key` (fora do Git). Domínios aceitos no login ficam em `config/mcp.php`.
+
+## E-mail e alertas diários
+
+Os alertas de vagas, a confirmação de conta e a redefinição de senha usam o e-mail do `.env`
+(na Hostinger, crie uma conta em hPanel → E-mails):
+
+```
+MAIL_MAILER=smtp
+MAIL_SCHEME=smtps
+MAIL_HOST=smtp.hostinger.com
+MAIL_PORT=465
+MAIL_USERNAME=alertas@seu-dominio
+MAIL_PASSWORD=senha-dessa-conta
+MAIL_FROM_ADDRESS=alertas@seu-dominio
+```
+
+Teste com `php artisan garimpo:testar-email voce@exemplo.com`. O resumo dos alertas sai às 8h (Brasília), no máximo
+1 e-mail por pessoa por dia, só para e-mails confirmados. Para isso, crie no hPanel → Avançado → Cron um job a cada minuto:
+
+```
+cd /caminho/do/site && php artisan schedule:run >> /dev/null 2>&1
+```
 
 ## Produção: segurança e LGPD
 

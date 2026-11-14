@@ -18,6 +18,7 @@
             <li><strong>Candidaturas</strong> (vaga, empresa, status, observações): para você acompanhar seus processos. Base legal: execução de contrato.</li>
             <li><strong>Registros técnicos</strong> (endereço IP, navegador, data de acesso na sessão): para segurança e para cumprir o Marco Civil da Internet. Base legal: obrigação legal e legítimo interesse (art. 7º, II e IX).</li>
             <li><strong>Conexões de IA</strong> (nome da conexão, app, datas): para controlar quem acessa sua conta pelo MCP.</li>
+            <li><strong>Alertas de vagas</strong> (filtros escolhidos e data do último envio): para mandar, no máximo uma vez por dia, um e-mail com vagas novas. Só enviamos para e-mail confirmado, e todo e-mail tem o link "Parar de receber". Base legal: execução de contrato, a seu pedido.</li>
         </ul>
         <p>Não pedimos dados sensíveis (art. 5º, II). Evite colocar no currículo CPF, RG, estado civil, religião, saúde ou foto: eles não ajudam no processo seletivo.</p>
 
