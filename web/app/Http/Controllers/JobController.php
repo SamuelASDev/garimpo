@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobPosting;
+use App\Models\Resume;
 use App\Models\ResumeTailoring;
 use App\Services\AiWriter;
 use App\Services\AtsMatcher;
 use App\Services\JobClassifier;
+use App\Services\ResumeTemplate;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -14,12 +17,20 @@ use Illuminate\View\View;
 
 class JobController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, JobClassifier $classifier): View
     {
         $filters = $request->only(['q', 'seniority', 'area', 'tech', 'remote']);
+        $jobs = JobPosting::filter($filters)->latest('posted_at')->paginate(20)->withQueryString();
+
+        // % de compatibilidade de cada vaga com o currículo do usuário (mesma conta do ATS).
+        $resumeTechs = ($resume = $request->user()?->resume) ? $classifier->techs($resume->plainText()) : null;
+        $scores = $resumeTechs === null ? [] : $jobs->getCollection()->mapWithKeys(fn (JobPosting $j): array => [
+            $j->id => $j->techs ? (int) round(count(array_intersect($j->techs, $resumeTechs)) / count($j->techs) * 100) : null,
+        ])->all();
 
         return view('jobs.index', [
-            'jobs' => JobPosting::filter($filters)->latest('posted_at')->paginate(20)->withQueryString(),
+            'jobs' => $jobs,
+            'scores' => $scores,
             'filters' => $filters,
             'areas' => array_keys(JobClassifier::AREAS),
             'seniorities' => JobClassifier::SENIORITIES,
@@ -39,35 +50,69 @@ class JobController extends Controller
         ]);
     }
 
-    public function tailor(Request $request, JobPosting $job, AtsMatcher $matcher, AiWriter $writer): RedirectResponse
+    /** Cria o currículo para a vaga (IA grátis; sem IA, copia o currículo base) e abre o editor. */
+    public function tailor(Request $request, JobPosting $job, AtsMatcher $matcher, AiWriter $writer, ResumeTemplate $template): RedirectResponse
     {
         $user = $request->user();
-        abort_unless($user->resume, 422, 'Cadastre seu currículo primeiro.');
+        if (! $user->resume) {
+            return redirect()->route('resume.edit')->with('error', 'Primeiro monte ou importe o seu currículo.');
+        }
 
         $key = 'tailor:'.$user->id;
-        if (RateLimiter::tooManyAttempts($key, 5)) {
-            return back()->with('error', 'Limite de 5 currículos por dia atingido. Use sua própria IA pelo MCP para gerar mais.');
-        }
-
+        $notice = null;
         try {
+            if (RateLimiter::tooManyAttempts($key, 5)) {
+                throw new \RuntimeException('Limite de 5 currículos por dia com a IA grátis atingido. Use "Conectar IA" para gerar sem limite.');
+            }
             $result = $writer->tailor($user->resume, $job, $matcher->match($user->resume, $job));
+            RateLimiter::hit($key, 86400);
+            $html = $template->render($result['data']);
+            $provider = $result['provider'];
+            $recommendations = ResumeTemplate::recommendations($result['data']['recomendacoes'] ?? []);
         } catch (\RuntimeException $e) {
-            return back()->with('error', $e->getMessage());
+            $html = $user->resume->html ?? $template->fromPlainText($user->resume->plainText());
+            $provider = 'copia';
+            $recommendations = [];
+            $notice = $e->getMessage().' Abrimos uma cópia do seu currículo para você ajustar usando o painel "O que falta".';
         }
 
-        RateLimiter::hit($key, 86400);
         ResumeTailoring::updateOrCreate(
             ['user_id' => $user->id, 'job_posting_id' => $job->id],
-            ['content' => $result['content'], 'generated_by' => $result['provider']],
+            ['content' => $html, 'generated_by' => $provider, 'recommendations' => $recommendations],
         );
 
-        return redirect()->route('jobs.resume', $job);
+        return redirect()->route('jobs.resume', $job)->with('error', $notice);
     }
 
-    public function resume(Request $request, JobPosting $job): View
+    /** Editor do currículo adaptado + painel do que falta. */
+    public function resume(Request $request, JobPosting $job, AtsMatcher $matcher): View
     {
-        $tailoring = ResumeTailoring::where('user_id', $request->user()->id)->where('job_posting_id', $job->id)->firstOrFail();
+        $tailoring = $this->tailoringFor($request, $job);
+        $draft = new Resume(['html' => $tailoring->content]);
 
-        return view('jobs.resume', ['job' => $job, 'tailoring' => $tailoring]);
+        return view('jobs.resume', [
+            'job' => $job,
+            'tailoring' => $tailoring,
+            'match' => $matcher->match($draft, $job),
+            'placeholders' => ResumeTemplate::placeholders($tailoring->content),
+        ]);
+    }
+
+    public function saveResume(Request $request, JobPosting $job, AtsMatcher $matcher): JsonResponse
+    {
+        $data = $request->validate(['html' => ['required', 'string', 'max:200000']]);
+        $tailoring = $this->tailoringFor($request, $job);
+        $tailoring->update(['content' => $data['html']]);
+
+        return response()->json([
+            'message' => 'Currículo salvo!',
+            'match' => $matcher->match(new Resume(['html' => $data['html']]), $job),
+            'placeholders' => ResumeTemplate::placeholders($data['html']),
+        ]);
+    }
+
+    private function tailoringFor(Request $request, JobPosting $job): ResumeTailoring
+    {
+        return ResumeTailoring::where('user_id', $request->user()->id)->where('job_posting_id', $job->id)->firstOrFail();
     }
 }

@@ -29,7 +29,7 @@ class PrepareTailoredResume extends Tool
 
         return Response::text(
             $writer->prompt($resume, $job, $matcher->match($resume, $job))
-            ."\n\n=== AO TERMINAR ===\nChame save-tailored-resume com job_id={$job->id} e o currículo completo em content. "
+            ."\n\n=== AO TERMINAR ===\nChame save-tailored-resume com job_id={$job->id} e o JSON acima (incluindo recomendacoes) em data. "
             .'Depois mostre ao usuário o link retornado e o que falta para a vaga.'
         );
     }

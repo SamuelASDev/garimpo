@@ -14,9 +14,18 @@ class Resume extends Model
         return $this->belongsTo(User::class);
     }
 
-    /** Texto completo usado para comparar com a vaga. */
+    /**
+     * Texto do currículo (sem HTML) usado para comparar com as vagas.
+     * Trechos ainda marcados em amarelo ("ADICIONE: ...") não contam: são pendências, não experiência.
+     */
     public function plainText(): string
     {
-        return implode("\n", [$this->headline, $this->summary, $this->skills, $this->experience, $this->education, $this->extras]);
+        if ($this->html) {
+            $text = preg_replace(['~<mark[^>]*>.*?</mark>~is', '~<(br|/p|/li|/h[1-6])[^>]*>~i', '~[ \t]+~'], ['', "\n", ' '], $this->html);
+
+            return trim(html_entity_decode(strip_tags($text)));
+        }
+
+        return implode("\n", array_filter([$this->full_name, $this->headline, $this->contact, $this->summary, $this->skills, $this->experience, $this->education, $this->extras]));
     }
 }

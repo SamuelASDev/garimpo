@@ -56,7 +56,16 @@
                             @endforeach
                         </div>
                     @endif
-                    <p class="mt-3 text-xs text-gray-400">{{ ucfirst($job->source) }} · {{ $job->posted_at?->diffForHumans() }}</p>
+                    <div class="mt-3 flex items-center justify-between gap-2">
+                        <p class="text-xs text-gray-400">{{ ucfirst($job->source) }} · {{ $job->posted_at?->diffForHumans() }}</p>
+                        @isset($scores[$job->id])
+                            @php($s = $scores[$job->id])
+                            <span title="Compatibilidade com o seu currículo" @class(['px-2 py-0.5 rounded-full text-xs font-semibold',
+                                'bg-emerald-100 text-emerald-700' => $s >= 70, 'bg-amber-100 text-amber-700' => $s >= 40 && $s < 70, 'bg-red-100 text-red-700' => $s < 40])>
+                                {{ $s >= 70 ? '🎯' : ($s >= 40 ? '💪' : '🔧') }} {{ $s }}% compatível
+                            </span>
+                        @endisset
+                    </div>
                 </a>
             @empty
                 <p class="text-center text-gray-500 py-16">Nenhuma vaga encontrada com esses filtros.</p>

@@ -83,9 +83,12 @@ class ApplicationsAndMcpTest extends TestCase
         $job = $this->job();
 
         GarimpoServer::actingAs($user)->tool(SearchJobs::class, ['tech' => 'PHP'])->assertOk()->assertSee('Desenvolvedor PHP Pleno');
-        GarimpoServer::actingAs($user)->tool(PrepareTailoredResume::class, ['job_id' => $job->id])->assertOk()->assertSee(['NÃO invente', 'Laravel']);
-        GarimpoServer::actingAs($user)->tool(SaveTailoredResume::class, ['job_id' => $job->id, 'content' => str_repeat('Currículo adaptado. ', 15)])->assertOk();
-        $this->assertSame('mcp', ResumeTailoring::sole()->generated_by);
+        GarimpoServer::actingAs($user)->tool(PrepareTailoredResume::class, ['job_id' => $job->id])->assertOk()->assertSee(['NUNCA invente', 'Laravel']);
+        GarimpoServer::actingAs($user)->tool(SaveTailoredResume::class, ['job_id' => $job->id, 'data' => ['nome' => 'Fulano', 'habilidades_tecnicas' => ['PHP', 'Laravel'], 'recomendacoes' => [['tipo' => 'remover', 'trecho' => 'Curso de violão', 'motivo' => 'Não tem relação com a vaga']]]])->assertOk();
+        $tailoring = ResumeTailoring::sole();
+        $this->assertSame('mcp', $tailoring->generated_by);
+        $this->assertStringContainsString('<h1 style="text-align: center">Fulano</h1>', $tailoring->content);
+        $this->assertSame('remover', $tailoring->recommendations[0]['tipo']);
 
         GarimpoServer::actingAs($user)->tool(AddApplication::class, ['job_id' => $job->id])->assertOk();
         $app = $user->jobApplications()->sole();

@@ -63,6 +63,7 @@ class JobIngestTest extends TestCase
         $this->actingAs($user)->get(route('jobs.show', $job))
             ->assertOk()
             ->assertSee('50%')
-            ->assertSee('Docker, AWS');
+            ->assertSee('Docker')
+            ->assertSee('AWS');
     }
 }

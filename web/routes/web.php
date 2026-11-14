@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AiConnectionController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ProfileController;
@@ -14,8 +15,11 @@ Route::middleware('auth')->group(function () {
     Route::redirect('/dashboard', '/curriculo')->name('dashboard');
     Route::get('/curriculo', [ResumeController::class, 'edit'])->name('resume.edit');
     Route::put('/curriculo', [ResumeController::class, 'update'])->name('resume.update');
+    Route::post('/curriculo/importar', [ResumeController::class, 'import'])->middleware('throttle:10,1')->name('resume.import');
+    Route::post('/exportar/word', [ExportController::class, 'word'])->name('export.word');
     Route::post('/vagas/{job}/adaptar', [JobController::class, 'tailor'])->name('jobs.tailor');
     Route::get('/vagas/{job}/curriculo', [JobController::class, 'resume'])->name('jobs.resume');
+    Route::put('/vagas/{job}/curriculo', [JobController::class, 'saveResume'])->name('jobs.resume.update');
     Route::post('/vagas/{job}/candidatura', [JobApplicationController::class, 'storeFromJob'])->name('jobs.apply');
 
     Route::get('/candidaturas', [JobApplicationController::class, 'index'])->name('applications.index');

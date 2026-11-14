@@ -8,7 +8,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Retorna o currículo cadastrado pelo usuário no Garimpo.')]
+#[Description('Retorna o currículo base do usuário no Garimpo (texto). Se não existir, peça o currículo dele e salve com save-resume.')]
 class GetResume extends Tool
 {
     public function handle(Request $request): Response
@@ -16,8 +16,8 @@ class GetResume extends Tool
         $resume = $request->user()?->resume;
 
         return $resume
-            ? Response::json($resume->only(['full_name', 'headline', 'contact', 'summary', 'skills', 'experience', 'education', 'extras']))
-            : Response::error('O usuário ainda não cadastrou o currículo no Garimpo.');
+            ? Response::text($resume->plainText())
+            : Response::error('O usuário ainda não tem currículo no Garimpo. Peça o currículo (texto ou PDF) e salve com save-resume.');
     }
 
     public function schema(JsonSchema $schema): array
