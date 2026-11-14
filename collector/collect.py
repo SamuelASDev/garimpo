@@ -6,7 +6,9 @@ O site filtra o que não é TI, classifica e remove duplicadas.
 Variáveis de ambiente:
   INGEST_URL     ex.: https://seusite.com/api/ingest
   INGEST_TOKEN   mesmo valor do INGEST_TOKEN do .env do Laravel
-  ADZUNA_APP_ID / ADZUNA_APP_KEY   (opcional) chaves grátis em developer.adzuna.com
+  JOOBLE_API_KEY (opcional) chave grátis em jooble.org/api/about (100 chamadas/dia)
+  JOOBLE_HOST    (opcional) país da chave: br.jooble.org (padrão), jooble.org (EUA)...
+  ADZUNA_APP_ID / ADZUNA_APP_KEY   (opcional, pago: £8/mês) developer.adzuna.com
   USE_JOBSPY=1   (opcional) inclui LinkedIn e Indeed via python-jobspy
   DRY_RUN=1      só mostra quantas vagas achou, sem enviar
 """
@@ -57,6 +59,41 @@ def gupy() -> list[dict]:
                 "remote": j.get("workplaceType") == "remote",
                 "description": j.get("description") or "",
                 "posted_at": j.get("publishedDate"),
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def jooble() -> list[dict]:
+    """API oficial da Jooble. Cada chave vale para um país (host). Limite grátis: 100 chamadas/dia."""
+    key = os.getenv("JOOBLE_API_KEY")
+    if not key:
+        return []
+    host = os.getenv("JOOBLE_HOST") or "br.jooble.org"
+    jobs = []
+    for term in ["desenvolvedor", "suporte ti", "analista de sistemas", "devops", "dados"]:
+        body = json.dumps({"keywords": term, "page": "1"}).encode()
+        req = urllib.request.Request(f"https://{host}/api/{key}", data=body, method="POST", headers={
+            "Content-Type": "application/json", "User-Agent": USER_AGENT,
+        })
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read().decode())["jobs"]
+        except Exception as exc:
+            print(f"[jooble] {term}: {exc}", file=sys.stderr)
+            if isinstance(exc, urllib.error.HTTPError) and exc.code == 403:
+                break  # chave sem acesso a esse país: não adianta tentar os outros termos
+            continue
+        for j in data:
+            jobs.append({
+                "source": "jooble",
+                "url": j["link"],
+                "title": j["title"],
+                "company": j.get("company") or None,
+                "location": j.get("location") or None,
+                "remote": "remot" in (j.get("location", "") + j["title"]).lower(),
+                "description": j.get("snippet", ""),
+                "posted_at": j.get("updated") or None,
             })
         time.sleep(PAUSE)
     return jobs
@@ -137,7 +174,7 @@ def send(jobs: list[dict]) -> None:
 
 
 def main() -> None:
-    jobs = gupy() + adzuna() + jobspy()
+    jobs = gupy() + jooble() + adzuna() + jobspy()
     unique = list({j["url"]: j for j in jobs if j.get("url") and j.get("title")}.values())
     print(f"{len(unique)} vagas coletadas")
     if os.getenv("DRY_RUN") == "1":

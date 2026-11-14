@@ -22,6 +22,8 @@ jobs:
         env:
           INGEST_URL: ${{ secrets.INGEST_URL }}
           INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+          JOOBLE_API_KEY: ${{ secrets.JOOBLE_API_KEY }}
+          JOOBLE_HOST: ${{ vars.JOOBLE_HOST }}
           ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
           ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
           USE_JOBSPY: ${{ vars.USE_JOBSPY }}

@@ -44,12 +44,13 @@ INGEST_URL=http://127.0.0.1:8010/api/ingest INGEST_TOKEN=<o mesmo do .env> pytho
 | `GROQ_API_KEY` | (opcional) chave grátis em console.groq.com, usada se o Gemini falhar |
 
 No GitHub Actions, configure os *secrets* `INGEST_URL`, `INGEST_TOKEN` e, se quiser,
-`ADZUNA_APP_ID` / `ADZUNA_APP_KEY`. Para incluir LinkedIn e Indeed via `python-jobspy`,
+`JOOBLE_API_KEY` (grátis, 100 chamadas/dia; a chave vale para um país, informe o host na
+*variable* `JOOBLE_HOST`, padrão `br.jooble.org`) e `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` (pago). Para incluir LinkedIn e Indeed via `python-jobspy`,
 crie a *variable* `USE_JOBSPY=1`.
 
 ## Fontes de vagas
 
-Gupy (página pública de busca), Adzuna (API oficial) e, opcionalmente, LinkedIn/Indeed via
+Gupy (página pública de busca), Jooble (API oficial grátis), Adzuna (API oficial, paga) e, opcionalmente, LinkedIn/Indeed via
 [python-jobspy](https://github.com/speedyapply/JobSpy). O Garimpo guarda só um resumo e sempre
 leva para a vaga original.
 
