@@ -32,12 +32,7 @@
             <main>
                 {{ $slot }}
             </main>
-
-            <footer class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-xs text-gray-400 flex flex-wrap gap-4 print:hidden">
-                <span>{{ config('app.name') }} · open source (MIT)</span>
-                <a href="{{ route('legal.privacy') }}" class="hover:text-gray-600">Política de Privacidade</a>
-                <a href="{{ route('legal.terms') }}" class="hover:text-gray-600">Termos de Uso</a>
-            </footer>
+            <x-site-footer />
         </div>
     </body>
 </html>

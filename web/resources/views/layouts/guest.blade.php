@@ -43,10 +43,7 @@
                 <div class="w-full max-w-md mx-auto">
                     {{ $slot }}
                 </div>
-                <p class="mt-10 text-xs text-gray-400 text-center">
-                    <a href="{{ route('legal.privacy') }}" class="hover:text-gray-600">Política de Privacidade</a> ·
-                    <a href="{{ route('legal.terms') }}" class="hover:text-gray-600">Termos de Uso</a>
-                </p>
+                <x-site-footer compact />
             </main>
         </div>
     </body>
