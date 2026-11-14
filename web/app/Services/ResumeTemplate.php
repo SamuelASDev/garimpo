@@ -102,6 +102,7 @@ class ResumeTemplate
     {
         return collect(is_array($items) ? $items : [])
             ->filter(fn ($r) => is_array($r) && is_string($r['trecho'] ?? null) && trim($r['trecho']) !== '')
+            ->reject(fn (array $r) => str_contains($r['trecho'], '[[')) // repete um aviso amarelo que já está no documento
             ->map(fn (array $r): array => [
                 'tipo' => in_array($r['tipo'] ?? null, ['remover', 'adicionar', 'ajustar'], true) ? $r['tipo'] : 'ajustar',
                 'trecho' => mb_substr(trim($r['trecho']), 0, 300),

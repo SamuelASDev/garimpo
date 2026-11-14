@@ -25,10 +25,10 @@ class SearchJobs extends Tool
         ]);
 
         $jobs = JobPosting::filter($filters)->latest('posted_at')->limit($filters['limit'] ?? 20)
-            ->get(['id', 'title', 'company', 'location', 'remote', 'seniority', 'area', 'techs', 'url', 'posted_at']);
+            ->get(['id', 'title', 'company', 'location', 'remote', 'seniority', 'area', 'techs', 'skills', 'url', 'posted_at']);
 
         return Response::json($jobs->map(fn (JobPosting $j): array => [
-            ...$j->only(['id', 'title', 'company', 'location', 'remote', 'seniority', 'area', 'techs', 'url']),
+            ...$j->only(['id', 'title', 'company', 'location', 'remote', 'seniority', 'area', 'techs', 'skills', 'url']),
             'posted_at' => $j->posted_at?->toDateString(),
         ]));
     }

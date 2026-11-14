@@ -48,6 +48,16 @@
                         <template x-for="t in match.missing" :key="t"><span class="px-2 py-0.5 rounded-full bg-red-50 text-red-700 text-xs border border-red-200" x-text="t"></span></template>
                         <span x-show="!match.missing.length" class="text-xs text-emerald-700">nada faltando 🎉</span>
                     </div>
+                    <template x-if="match.soft_matched.length || match.soft_missing.length">
+                        <div>
+                            <p class="mt-3 text-sm font-medium text-gray-800">🤝 Comportamental</p>
+                            <div class="mt-1 flex flex-wrap gap-1.5">
+                                <template x-for="t in match.soft_matched" :key="'s' + t"><span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs border border-emerald-200" x-text="'✓ ' + t"></span></template>
+                                <template x-for="t in match.soft_missing" :key="'m' + t"><span class="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-xs border border-violet-200" x-text="t"></span></template>
+                            </div>
+                            <p class="mt-1 text-[11px] text-gray-400">Mostre com exemplos reais nas experiências.</p>
+                        </div>
+                    </template>
                 </div>
 
                 <div x-show="placeholders.length" x-cloak class="bg-amber-50 border border-amber-200 rounded-xl p-5 text-sm">

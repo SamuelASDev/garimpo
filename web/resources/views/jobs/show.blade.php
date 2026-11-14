@@ -12,11 +12,16 @@
             <article class="bg-white rounded-xl border border-gray-200 p-6 min-w-0">
                 <h1 class="text-2xl font-bold text-gray-900">{{ $job->title }}</h1>
                 <p class="text-gray-500 mt-1">{{ $job->company ?? 'Empresa não informada' }} · {{ $job->remote ? 'Remoto' : ($job->location ?? 'Local não informado') }} · {{ ucfirst($job->source) }}</p>
-                <div class="mt-4 flex flex-wrap gap-1.5">
-                    @foreach ($job->techs ?? [] as $t)
-                        <span class="px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs">{{ $t }}</span>
-                    @endforeach
-                </div>
+                @foreach (['Tecnologias' => ['techs', 'bg-gray-100 text-gray-700'], 'Competências pedidas' => ['skills', 'bg-sky-50 text-sky-700'], 'Comportamental' => ['soft_skills', 'bg-violet-50 text-violet-700']] as $label => [$field, $classes])
+                    @if ($job->$field)
+                        <p class="mt-4 text-xs uppercase tracking-wide text-gray-400">{{ $label }}</p>
+                        <div class="mt-1 flex flex-wrap gap-1.5">
+                            @foreach ($job->$field as $t)
+                                <span class="px-2 py-0.5 rounded text-xs {{ $classes }}">{{ $t }}</span>
+                            @endforeach
+                        </div>
+                    @endif
+                @endforeach
                 <div class="mt-5 flex flex-wrap gap-2">
                     <a href="{{ $job->url }}" target="_blank" rel="noopener nofollow" class="px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">Candidatar-se em {{ ucfirst($job->source) }} &nearr;</a>
                     @auth
@@ -42,7 +47,7 @@
                 @elseif (! $resume)
                     <p class="mt-2 text-sm text-gray-600"><a href="{{ route('resume.edit') }}" class="text-emerald-700 underline">Monte ou importe seu currículo</a> para ver a compatibilidade.</p>
                 @else
-                    <x-score-ring :score="$match['score']" class="mt-4">das tecnologias da vaga estão no seu currículo</x-score-ring>
+                    <x-score-ring :score="$match['score']" class="mt-4">do que a vaga pede (tecnologias e competências) está no seu currículo</x-score-ring>
 
                     <p class="mt-5 text-sm font-medium text-gray-800">✅ Você já tem</p>
                     <div class="mt-1 flex flex-wrap gap-1.5">
@@ -60,6 +65,18 @@
                             <span class="text-xs text-emerald-700">nada faltando 🎉</span>
                         @endforelse
                     </div>
+
+                    @if ($match['soft_matched'] || $match['soft_missing'])
+                        <p class="mt-3 text-sm font-medium text-gray-800">🤝 Comportamental</p>
+                        <div class="mt-1 flex flex-wrap gap-1.5">
+                            @foreach ($match['soft_matched'] as $t)
+                                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-xs border border-emerald-200">✓ {{ $t }}</span>
+                            @endforeach
+                            @foreach ($match['soft_missing'] as $t)
+                                <span class="px-2 py-0.5 rounded-full bg-violet-50 text-violet-700 text-xs border border-violet-200">{{ $t }}</span>
+                            @endforeach
+                        </div>
+                    @endif
 
                     <ul class="mt-4 space-y-1.5 text-xs text-gray-500">
                         @foreach ($match['tips'] as $tip)

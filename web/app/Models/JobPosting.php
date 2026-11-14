@@ -12,7 +12,7 @@ class JobPosting extends Model
 
     protected function casts(): array
     {
-        return ['techs' => 'array', 'remote' => 'boolean', 'posted_at' => 'datetime'];
+        return ['techs' => 'array', 'skills' => 'array', 'soft_skills' => 'array', 'remote' => 'boolean', 'posted_at' => 'datetime'];
     }
 
     /**

@@ -44,6 +44,7 @@ class AiWriter
     public function prompt(Resume $resume, JobPosting $job, array $match): string
     {
         $missing = implode(', ', $match['missing']) ?: 'nenhuma';
+        $softMissing = implode(', ', $match['soft_missing'] ?? []) ?: 'nenhuma';
 
         return self::RULES.<<<TXT
 
@@ -55,8 +56,15 @@ class AiWriter
         "cargo" = cargo e nível genéricos separados por " | " (ex.: "Desenvolvedor Júnior | Back-end PHP").
         "texto" = uma ou duas frases no estilo: "Busco oportunidade como [cargo] na área de [área], onde posso
         aplicar e expandir meus conhecimentos em [habilidades que a pessoa já tem], contribuindo com resultados para a equipe."
-        Para cada palavra-chave da vaga que NÃO aparece no currículo ({$missing}), coloque um aviso
-        [[ADICIONE: ...]] no lugar certo, dizendo o que a pessoa deve escrever SE tiver essa experiência.
+        Leia a vaga inteira e identifique TUDO o que ela pede, não só linguagens: atividades (ex.: montagem e
+        manutenção de computadores, atendimento presencial), conhecimentos (hardware, redes locais, nobreak),
+        formação e requisitos. Pelo dicionário do site, faltam no currículo: {$missing}.
+        Para cada requisito importante da vaga que NÃO aparece no currículo, coloque um aviso [[ADICIONE: ...]]
+        no lugar certo (experiência, habilidades ou formação), em forma de orientação, ex.:
+        "[[ADICIONE: se você já montou ou fez manutenção de computadores, descreva onde e o que fazia]]".
+        Não repita esses avisos em "recomendacoes" (lá vão só remover/ajustar/adicionar sobre o conteúdo).
+        Competências comportamentais pedidas e ainda não demonstradas: {$softMissing}. Se a pessoa já mostra isso
+        de alguma forma, destaque; senão, sugira em [[ADICIONE: ...]] um exemplo real que ela poderia contar.
         Mantenha no JSON todo o conteúdo real da pessoa (ela decide o que tirar) e inclua também a chave
         "recomendacoes": lista de até 8 itens {"tipo":"remover|adicionar|ajustar","trecho":"","motivo":""}.
         Avalie CADA experiência, atividade, curso, projeto e habilidade em relação ao que a vaga pede:

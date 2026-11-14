@@ -17,16 +17,18 @@ use Illuminate\View\View;
 
 class JobController extends Controller
 {
-    public function index(Request $request, JobClassifier $classifier): View
+    public function index(Request $request, AtsMatcher $matcher): View
     {
         $filters = $request->only(['q', 'seniority', 'area', 'tech', 'remote']);
         $jobs = JobPosting::filter($filters)->latest('posted_at')->paginate(20)->withQueryString();
 
         // % de compatibilidade de cada vaga com o currículo do usuário (mesma conta do ATS).
-        $resumeTechs = ($resume = $request->user()?->resume) ? $classifier->techs($resume->plainText()) : null;
-        $scores = $resumeTechs === null ? [] : $jobs->getCollection()->mapWithKeys(fn (JobPosting $j): array => [
-            $j->id => $j->techs ? (int) round(count(array_intersect($j->techs, $resumeTechs)) / count($j->techs) * 100) : null,
-        ])->all();
+        $have = ($resume = $request->user()?->resume) ? $matcher->keywords($resume->plainText()) : null;
+        $scores = $have === null ? [] : $jobs->getCollection()->mapWithKeys(function (JobPosting $j) use ($have): array {
+            $required = AtsMatcher::requirements($j);
+
+            return [$j->id => $required ? (int) round(count(array_intersect($required, $have)) / count($required) * 100) : null];
+        })->all();
 
         return view('jobs.index', [
             'jobs' => $jobs,

@@ -23,7 +23,7 @@ class GetJob extends Tool
         $resume = $request->user()?->resume;
 
         return Response::json([
-            ...$job->only(['id', 'title', 'company', 'location', 'remote', 'seniority', 'area', 'techs', 'url', 'source', 'description']),
+            ...$job->only(['id', 'title', 'company', 'location', 'remote', 'seniority', 'area', 'techs', 'skills', 'soft_skills', 'url', 'source', 'description']),
             'ats_match' => $resume ? $matcher->match($resume, $job) : 'usuário sem currículo cadastrado',
         ]);
     }
