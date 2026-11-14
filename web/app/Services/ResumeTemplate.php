@@ -110,6 +110,18 @@ class ResumeTemplate
             ->take(8)->values()->all();
     }
 
+    /** HTML vindo da IA: mantém só as tags do editor e o alinhamento (remove scripts, links e outros atributos). */
+    public static function sanitize(string $html): string
+    {
+        $html = strip_tags($html, '<h1><h2><h3><p><ul><ol><li><strong><em><u><s><mark><br>');
+
+        return preg_replace_callback('~<(\w+)(\s[^>]*)?>~', function (array $m): string {
+            $align = preg_match('~text-align:\s*(left|center|right|justify)~i', $m[2] ?? '', $a) ? ' style="text-align: '.strtolower($a[1]).'"' : '';
+
+            return '<'.strtolower($m[1]).$align.'>';
+        }, $html);
+    }
+
     /** Lista os trechos marcados para o usuário completar. @return list<string> */
     public static function placeholders(string $html): array
     {

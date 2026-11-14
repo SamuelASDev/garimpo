@@ -59,9 +59,14 @@ class AiWriter
         [[ADICIONE: ...]] no lugar certo, dizendo o que a pessoa deve escrever SE tiver essa experiência.
         Mantenha no JSON todo o conteúdo real da pessoa (ela decide o que tirar) e inclua também a chave
         "recomendacoes": lista de até 8 itens {"tipo":"remover|adicionar|ajustar","trecho":"","motivo":""}.
-        Em "remover", "trecho" deve ser o texto EXATO de uma atividade, curso, projeto ou habilidade do JSON
-        que não ajuda nesta vaga (ex.: experiência de outra área, curso irrelevante). Em "adicionar"/"ajustar",
-        "trecho" é a sugestão. "motivo" em uma frase curta.
+        Avalie CADA experiência, atividade, curso, projeto e habilidade em relação ao que a vaga pede:
+        - "remover": só quando o item NÃO tem nenhum valor para esta vaga, nem transferível (ex.: curso de
+          violão numa vaga de suporte; atividade de vendas sem relação com tecnologia). "trecho" = texto EXATO do item.
+        - "ajustar": quando o item é de outra área mas tem algo aproveitável (ex.: dev indo para suporte →
+          destacar atendimento a usuários, resolução de problemas, Linux/redes). Diga como reescrever.
+        - "adicionar": palavra-chave ou informação que a vaga pede e a pessoa pode ter.
+        Na dúvida entre remover e ajustar, escolha AJUSTAR: tempo de experiência e soft skills quase sempre contam.
+        "motivo" em uma frase curta citando o que a vaga pede.
 
         === VAGA ===
         {$job->title} — {$job->company}
@@ -72,8 +77,58 @@ class AiWriter
         TXT;
     }
 
+    /**
+     * Chat do editor: a pessoa pede uma mudança ("adicione que usei Docker na empresa X") ou uma dúvida
+     * ("que melhorias você sugere?"). A IA responde e, se for mudança, devolve o documento inteiro atualizado.
+     *
+     * @return array{data: array{resposta?: string, html?: ?string}, provider: string}
+     */
+    public function assistant(string $html, string $message, ?JobPosting $job = null): array
+    {
+        $vaga = $job ? "\n=== VAGA ALVO DESTE CURRÍCULO ===\n{$job->title}\n".mb_substr((string) $job->description, 0, 6000)."\n" : '';
+
+        return $this->json(<<<TXT
+        Você é um assistente de currículos ATS no Brasil, dentro de um editor de texto. Responda SOMENTE com JSON:
+        {"resposta": "mensagem curta e amigável em português para a pessoa", "html": "documento COMPLETO atualizado, ou null"}
+        - Se a pessoa pediu para alterar/adicionar/remover algo, aplique no documento e devolva o HTML inteiro em "html".
+          Use só as tags h1, h2, p, ul, li, strong, em, mark, br e mantenha a estrutura (h1 = nome, h2 = seções).
+        - Se ela só perguntou (ex.: "que melhorias você sugere?", "o que falta para a vaga?"), responda em "resposta"
+          com uma lista curta e objetiva e deixe "html": null.
+        - NUNCA invente experiências, datas, empresas ou tecnologias: use apenas o que já está no documento
+          ou o que a pessoa escreveu na mensagem. Se faltar um dado, pergunte em "resposta".
+        - Em "resposta", fale como um recrutador conversando: nunca mencione HTML, tags, h1/h2 ou código.
+        {$vaga}
+        === DOCUMENTO ATUAL (HTML) ===
+        {$html}
+
+        === PEDIDO DA PESSOA ===
+        {$message}
+        TXT, 'resposta');
+    }
+
+    /** Melhorias gerais para o currículo principal (sem vaga específica). @return array{data: array<string, mixed>, provider: string} */
+    public function suggest(Resume $resume): array
+    {
+        return $this->json(<<<TXT
+        Você é recrutador e especialista em ATS no Brasil. Analise o currículo abaixo e responda SOMENTE com JSON:
+        {"recomendacoes": [{"tipo": "remover|adicionar|ajustar", "trecho": "", "motivo": ""}]}
+        Até 8 itens, os mais importantes primeiro. Este é o currículo PRINCIPAL (serve para várias vagas de TI),
+        então quase tudo de tecnologia deve ficar. Prefira "ajustar" e "adicionar".
+        - "remover": RARO. Só para item repetido, dado pessoal que não deve estar em currículo (CPF, RG, estado civil,
+          idade, foto) ou item sem relação nenhuma com trabalho/TI. NUNCA sugira remover cidade/estado, contato,
+          tecnologias, ferramentas (inclusive de IA), conceitos técnicos, cursos ou projetos de TI.
+          "trecho" = texto EXATO do item.
+        - "ajustar": como reescrever algo para ficar mais forte (verbo de ação, resultado, número, palavra-chave).
+        - "adicionar": seção ou informação que falta (ex.: resumo, links de projetos, métricas).
+        "motivo" em uma frase curta. Não invente fatos sobre a pessoa.
+
+        === CURRÍCULO ===
+        {$resume->plainText()}
+        TXT, 'recomendacoes');
+    }
+
     /** @return array{data: array<string, mixed>, provider: string} */
-    private function json(string $prompt): array
+    private function json(string $prompt, string $requiredKey = 'nome'): array
     {
         foreach (['groq', 'gemini', 'openrouter'] as $provider) {
             if (! config("services.$provider.key")) {
@@ -82,7 +137,7 @@ class AiWriter
             try {
                 $raw = $this->$provider($prompt);
                 $data = json_decode(trim(preg_replace('/^```(json)?|```$/m', '', $raw)), true);
-                if (is_array($data) && isset($data['nome'])) {
+                if (is_array($data) && array_key_exists($requiredKey, $data)) {
                     return ['data' => $data, 'provider' => $provider];
                 }
             } catch (\Throwable $e) {

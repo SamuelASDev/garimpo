@@ -111,6 +111,13 @@ class JobController extends Controller
         ]);
     }
 
+    public function destroyResume(Request $request, JobPosting $job): RedirectResponse
+    {
+        $this->tailoringFor($request, $job)->delete();
+
+        return redirect()->route('resumes.index')->with('status', 'Currículo da vaga excluído.');
+    }
+
     private function tailoringFor(Request $request, JobPosting $job): ResumeTailoring
     {
         return ResumeTailoring::where('user_id', $request->user()->id)->where('job_posting_id', $job->id)->firstOrFail();

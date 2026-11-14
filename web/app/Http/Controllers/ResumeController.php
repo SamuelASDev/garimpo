@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Resume;
+use App\Models\ResumeTailoring;
 use App\Services\AiWriter;
+use App\Services\AtsMatcher;
 use App\Services\ResumeTemplate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -11,13 +14,33 @@ use Illuminate\View\View;
 
 class ResumeController extends Controller
 {
+    /** Lista: currículo principal no topo + um currículo por vaga. Nenhum editor aberto aqui. */
+    public function index(Request $request, AtsMatcher $matcher): View
+    {
+        $user = $request->user();
+        $tailorings = ResumeTailoring::with('jobPosting')->where('user_id', $user->id)->latest('updated_at')->get()
+            ->filter(fn (ResumeTailoring $t) => $t->jobPosting !== null)
+            ->map(fn (ResumeTailoring $t) => [
+                'tailoring' => $t,
+                'job' => $t->jobPosting,
+                'score' => $matcher->match(new Resume(['html' => $t->content]), $t->jobPosting)['score'],
+                'pending' => count(ResumeTemplate::placeholders($t->content)),
+            ]);
+
+        return view('resume.index', [
+            'resume' => $user->resume,
+            'mainPending' => $user->resume?->html ? count(ResumeTemplate::placeholders($user->resume->html)) : 0,
+            'tailorings' => $tailorings,
+        ]);
+    }
+
     public function edit(Request $request, ResumeTemplate $template): View
     {
         $resume = $request->user()->resume;
         $html = $resume?->html
             ?? ($resume ? $template->fromPlainText($resume->plainText()) : $template->render(ResumeTemplate::EXAMPLE));
 
-        return view('resume.edit', ['html' => $html, 'isExample' => ! $resume]);
+        return view('resume.edit', ['html' => $html, 'isExample' => ! $resume, 'recommendations' => $resume?->recommendations ?? []]);
     }
 
     public function update(Request $request): JsonResponse

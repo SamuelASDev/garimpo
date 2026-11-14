@@ -31,7 +31,7 @@ async function pdfToText(file) {
 }
 
 export function registerResumeEditor(Alpine) {
-    Alpine.data('resumeEditor', ({ html, saveUrl, importUrl = null, wordUrl, pdfUrl, filename, match = null, placeholders = [], recommendations = [] }) => {
+    Alpine.data('resumeEditor', ({ html, saveUrl, importUrl = null, wordUrl, pdfUrl, filename, match = null, placeholders = [], recommendations = [], assistantUrl = null, suggestUrl = null }) => {
         let editor = null; // fora do estado reativo do Alpine (o TipTap não funciona dentro de proxy)
 
         return {
@@ -42,6 +42,13 @@ export function registerResumeEditor(Alpine) {
             placeholders,
             recommendations: recommendations.map((r) => ({ ...r, applied: false, notFound: false })),
             state: {},
+            assistantUrl,
+            suggestUrl,
+            suggesting: false,
+            chat: [],
+            chatInput: '',
+            chatBusy: false,
+            undoHtml: null,
 
             init() {
                 editor = new Editor({
@@ -154,6 +161,61 @@ export function registerResumeEditor(Alpine) {
             applyAll() {
                 const done = this.recommendations.filter((r) => r.tipo === 'remover' && !r.applied).filter((r) => this.applyRecommendation(r)).length;
                 this.flash(done ? `${done} trecho(s) removido(s). Revise e clique em Salvar.` : 'Nada para remover.');
+            },
+
+            /** Chat: a IA responde e, se for o caso, devolve o documento alterado (dá para desfazer). */
+            async askAi(text) {
+                text = (text || '').trim();
+                if (!text || this.chatBusy) return;
+                this.chat.push({ role: 'user', text });
+                this.chatInput = '';
+                this.chatBusy = true;
+                this.scrollChat();
+                try {
+                    const res = await fetch(assistantUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf() },
+                        body: JSON.stringify({ message: text, html: editor.getHTML() }),
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (data.html) {
+                        this.undoHtml = editor.getHTML();
+                        editor.commands.setContent(data.html, { emitUpdate: true });
+                        this.dirty = true;
+                    }
+                    this.chat.push({ role: 'ai', text: (data.reply || data.message || 'Não consegui responder agora.') + (data.html ? '\n\n✏️ Alterei o documento. Revise e clique em Salvar.' : '') });
+                } catch (e) {
+                    this.chat.push({ role: 'ai', text: 'Não consegui falar com a IA: ' + e.message });
+                } finally {
+                    this.chatBusy = false;
+                    this.scrollChat();
+                }
+            },
+
+            undoAi() {
+                editor.commands.setContent(this.undoHtml, { emitUpdate: true });
+                this.undoHtml = null;
+                this.dirty = true;
+                this.flash('Mudança da IA desfeita.');
+            },
+
+            scrollChat() {
+                this.$nextTick(() => { this.$refs.chatLog.scrollTop = this.$refs.chatLog.scrollHeight; });
+            },
+
+            /** Sugestões gerais para o currículo principal. */
+            async loadSuggestions() {
+                if (this.dirty) await this.save();
+                this.suggesting = true;
+                try {
+                    const data = await postJson(suggestUrl, 'POST', {});
+                    this.recommendations = data.recommendations.map((r) => ({ ...r, applied: false, notFound: false }));
+                    if (!this.recommendations.length) this.flash('A IA não encontrou melhorias importantes. 👏');
+                } catch (e) {
+                    this.flash(e.message);
+                } finally {
+                    this.suggesting = false;
+                }
             },
 
             flash(text) {

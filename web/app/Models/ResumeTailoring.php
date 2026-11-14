@@ -12,4 +12,9 @@ class ResumeTailoring extends Model
     {
         return ['recommendations' => 'array'];
     }
+
+    public function jobPosting(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(JobPosting::class);
+    }
 }

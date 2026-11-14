@@ -1,6 +1,7 @@
 <x-app-layout>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <h1 class="text-2xl font-bold text-gray-900">Meu currículo</h1>
+        <a href="{{ route('resumes.index') }}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Currículos</a>
+        <h1 class="text-2xl font-bold text-gray-900 mt-1">⭐ Currículo principal</h1>
         <p class="text-gray-500 text-sm mt-1">Este é o seu currículo base. Para cada vaga, o Garimpo cria uma versão adaptada a partir dele.</p>
 
         @if (session('error'))
@@ -16,6 +17,9 @@
                 'pdfUrl' => route('export.pdf'),
                 'filename' => 'curriculo-'.auth()->user()->name,
                 'placeholders' => \App\Services\ResumeTemplate::placeholders($html),
+                'recommendations' => $recommendations,
+                'assistantUrl' => route('resume.assistant'),
+                'suggestUrl' => route('resume.suggestions'),
             ]">
                 @if ($isExample)
                     <div class="bg-emerald-600 text-white rounded-xl p-5">
