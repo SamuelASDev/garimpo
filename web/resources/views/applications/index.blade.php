@@ -12,8 +12,8 @@
     ];
 @endphp
 <x-app-layout>
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid lg:grid-cols-[1fr_280px] gap-8">
-        <div class="min-w-0">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div>
             <h1 class="text-2xl font-bold text-gray-900">Candidaturas</h1>
             <p class="text-gray-500 mt-1 text-sm">Acompanhe onde você se candidatou. Sem resposta há mais de {{ JobApplication::FOLLOW_UP_DAYS }} dias? Hora de mandar um follow-up.</p>
 
@@ -87,16 +87,25 @@
             </div>
         </div>
 
-        <aside class="text-sm">
+        {{-- Onde mais cadastrar o currículo: grupos recolhidos, abrem ao clicar --}}
+        <section class="mt-10">
             <h2 class="font-semibold text-gray-900">Cadastre seu currículo também em</h2>
-            @foreach ($sites as $group => $links)
-                <h3 class="mt-4 text-xs uppercase tracking-wide text-gray-400">{{ $group }}</h3>
-                <ul class="mt-1 space-y-1">
-                    @foreach ($links as $name => $url)
-                        <li><a href="{{ $url }}" target="_blank" rel="noopener" class="text-gray-700 hover:text-emerald-700">{{ $name }} &nearr;</a></li>
-                    @endforeach
-                </ul>
-            @endforeach
-        </aside>
+            <p class="text-sm text-gray-500">Quanto mais lugares, mais recrutadores te encontram.</p>
+            <div class="mt-3 space-y-2">
+                @foreach ($sites as $group => $links)
+                    <details class="group bg-white rounded-xl border border-gray-200">
+                        <summary class="flex items-center justify-between gap-3 px-4 py-3 cursor-pointer list-none select-none">
+                            <span class="font-medium text-gray-800">{{ $group }} <span class="ms-1 text-xs font-normal text-gray-400">{{ count($links) }} sites</span></span>
+                            <svg class="w-4 h-4 text-gray-400 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M5.3 7.3a1 1 0 011.4 0L10 10.6l3.3-3.3a1 1 0 111.4 1.4l-4 4a1 1 0 01-1.4 0l-4-4a1 1 0 010-1.4z" clip-rule="evenodd" /></svg>
+                        </summary>
+                        <div class="px-4 pb-4 flex flex-wrap gap-2">
+                            @foreach ($links as $name => $url)
+                                <a href="{{ $url }}" target="_blank" rel="noopener" class="px-3 py-1.5 rounded-full border border-gray-200 text-sm text-gray-700 hover:border-emerald-400 hover:text-emerald-700">{{ $name }} &nearr;</a>
+                            @endforeach
+                        </div>
+                    </details>
+                @endforeach
+            </div>
+        </section>
     </div>
 </x-app-layout>
