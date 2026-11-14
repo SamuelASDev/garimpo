@@ -8,4 +8,15 @@ export default defineConfig({
             refresh: true,
         }),
     ],
+    build: {
+        rollupOptions: {
+            output: {
+                // O worker do pdf.js vem como .mjs; muitas hospedagens entregam .mjs como texto e o navegador
+                // recusa. Gerando como .js ele funciona em qualquer servidor.
+                assetFileNames: (asset) => (asset.names?.[0] ?? asset.name ?? '').endsWith('.mjs')
+                    ? 'assets/[name]-[hash].js'
+                    : 'assets/[name]-[hash][extname]',
+            },
+        },
+    },
 });
