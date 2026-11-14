@@ -13,6 +13,7 @@ use App\Models\JobPosting;
 use App\Models\ResumeTailoring;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;
 
 class ApplicationsAndMcpTest extends TestCase
@@ -62,18 +63,41 @@ class ApplicationsAndMcpTest extends TestCase
         $this->assertNull($app->alert());
     }
 
-    public function test_user_can_generate_mcp_token(): void
+    public function test_user_can_generate_personal_token_and_use_mcp(): void
     {
+        Artisan::call('passport:client', ['--personal' => true, '--name' => 'Garimpo', '--provider' => 'users', '--no-interaction' => true]);
         $user = User::factory()->create();
 
         $this->actingAs($user)->post(route('ai.store'))->assertRedirect(route('ai.show'));
-        $this->actingAs($user)->get(route('ai.show'))->assertOk()->assertSee('claude mcp add');
-        $this->assertSame(1, $user->tokens()->count());
+        $token = session('token');
+        $this->assertNotEmpty($token);
+        $this->actingAs($user)->get(route('ai.show'))->assertOk()->assertSee('claude mcp add')->assertSee('IAs conectadas agora: 1');
+
+        auth()->forgetGuards();
+        $this->withHeaders(['Authorization' => "Bearer $token", 'Accept' => 'application/json, text/event-stream'])
+            ->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'initialize', 'params' => [
+                'protocolVersion' => '2025-06-18', 'capabilities' => (object) [], 'clientInfo' => ['name' => 'teste', 'version' => '1'],
+            ]])
+            ->assertOk()->assertSee('Garimpo');
     }
 
-    public function test_mcp_endpoint_requires_token(): void
+    public function test_mcp_endpoint_requires_token_and_points_to_oauth(): void
     {
-        $this->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertUnauthorized();
+        $this->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])
+            ->assertUnauthorized()
+            ->assertHeaderContains('WWW-Authenticate', 'resource_metadata=');
+
+        $this->getJson('/.well-known/oauth-authorization-server')->assertOk()
+            ->assertJsonPath('authorization_endpoint', route('passport.authorizations.authorize'))
+            ->assertJsonPath('scopes_supported', ['mcp:use']);
+    }
+
+    public function test_oauth_client_registration_only_for_known_ai_apps(): void
+    {
+        $this->postJson('/oauth/register', ['client_name' => 'Claude', 'redirect_uris' => ['https://claude.ai/api/mcp/auth_callback']])
+            ->assertSuccessful()->assertJsonStructure(['client_id']);
+        $this->postJson('/oauth/register', ['client_name' => 'Golpe', 'redirect_uris' => ['https://site-malicioso.test/callback']])
+            ->assertStatus(400); // invalid_redirect_uri (RFC 7591)
     }
 
     public function test_mcp_tools_search_tailor_and_track(): void

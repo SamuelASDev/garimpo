@@ -3,5 +3,8 @@
 use App\Mcp\Servers\GarimpoServer;
 use Laravel\Mcp\Facades\Mcp;
 
-// Cada usuário conecta a própria IA (Claude Code, Cursor, Codex...) com o token gerado em /conectar-ia.
-Mcp::web('/mcp', GarimpoServer::class)->middleware(['auth:sanctum', 'throttle:120,1']);
+// Login por OAuth (Claude.ai, ChatGPT, Claude Code, Codex, Cursor): descoberta + cadastro automático do cliente.
+Mcp::oauthRoutes();
+
+// A IA entra com o token OAuth ou com o token pessoal gerado em /conectar-ia (ambos via Passport, guard "api").
+Mcp::web('/mcp', GarimpoServer::class)->middleware(['auth:api', 'throttle:120,1']);

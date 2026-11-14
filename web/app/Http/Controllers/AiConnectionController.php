@@ -5,31 +5,33 @@ namespace App\Http\Controllers;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use Laravel\Mcp\Server\Registrar;
 
 /**
- * Gera o token que a IA do próprio usuário usa para acessar o servidor MCP do Garimpo.
+ * Conexão da IA do usuário com o MCP do Garimpo: por login OAuth (automático) ou por token pessoal (manual).
  */
 class AiConnectionController extends Controller
 {
     public function show(Request $request): View
     {
         return view('ai.show', [
-            'tokens' => $request->user()->tokens()->where('name', 'mcp')->latest()->get(),
+            // Tokens ativos: os do login OAuth (Claude.ai, ChatGPT...) e os pessoais gerados aqui.
+            'tokens' => $request->user()->tokens()->with('client')->where('revoked', false)->where('expires_at', '>', now())->latest()->get(),
             'mcpUrl' => url('/mcp'),
         ]);
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $token = $request->user()->createToken('mcp', ['mcp']);
+        $token = $request->user()->createToken('mcp', [Registrar::OAUTH_SCOPE]);
 
-        return redirect()->route('ai.show')->with('token', $token->plainTextToken);
+        return redirect()->route('ai.show')->with('token', $token->accessToken);
     }
 
     public function destroy(Request $request): RedirectResponse
     {
-        $request->user()->tokens()->where('name', 'mcp')->delete();
+        $request->user()->tokens()->update(['revoked' => true]);
 
-        return redirect()->route('ai.show')->with('status', 'Todos os acessos de IA foram revogados.');
+        return redirect()->route('ai.show')->with('status', 'Todas as IAs foram desconectadas.');
     }
 }

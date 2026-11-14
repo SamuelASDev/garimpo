@@ -51,12 +51,24 @@ crie a *variable* `USE_JOBSPY=1`.
 
 ## Conectar a própria IA (MCP)
 
-Em **Conectar IA** o usuário gera um token e conecta Claude Code, Cursor, Codex etc. ao endpoint `/mcp`.
-A IA ganha ferramentas para buscar vagas, ler o currículo, gerar currículos adaptados e gerenciar candidaturas.
+O endpoint `/mcp` aceita login por **OAuth** (Laravel Passport): no Claude.ai, ChatGPT, Claude Code, Codex
+ou Cursor basta colar `https://seu-dominio/mcp` e autorizar. Também dá para gerar um token manual em **Conectar IA**.
+A IA ganha ferramentas para buscar vagas, ler e adaptar currículos e gerenciar candidaturas.
+
+No servidor (uma vez): extensão PHP `sodium` ligada e
+
+```bash
+php artisan migrate
+php artisan passport:keys
+php artisan passport:client --personal --name=Garimpo --provider=users
+```
+
+As chaves ficam em `storage/oauth-*.key` (fora do Git). Domínios aceitos no login ficam em `config/mcp.php`.
 
 ## Fontes de vagas
 
-Gupy, Programathor, Vagas.com e InfoJobs (páginas públicas de busca), LinkedIn e Indeed via
+Gupy, Programathor, Vagas.com, InfoJobs, Empregos.com.br, Robert Half, Michael Page e Randstad
+(páginas públicas de busca), LinkedIn e Indeed via
 [python-jobspy](https://github.com/speedyapply/JobSpy), Jooble (API oficial grátis) e Adzuna (API oficial, paga).
 A mesma vaga publicada em vários sites entra uma vez só (hash de título + empresa + local).
 O Garimpo guarda só um resumo e sempre leva para a vaga original.
