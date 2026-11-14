@@ -1,0 +1,27 @@
+name: Coletar vagas
+
+on:
+  schedule:
+    - cron: "0 */4 * * *" # a cada 4 horas
+  workflow_dispatch: {}
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Instalar jobspy (só se ativado)
+        if: vars.USE_JOBSPY == '1'
+        run: pip install python-jobspy
+      - name: Coletar e enviar
+        run: python collector/collect.py
+        env:
+          INGEST_URL: ${{ secrets.INGEST_URL }}
+          INGEST_TOKEN: ${{ secrets.INGEST_TOKEN }}
+          ADZUNA_APP_ID: ${{ secrets.ADZUNA_APP_ID }}
+          ADZUNA_APP_KEY: ${{ secrets.ADZUNA_APP_KEY }}
+          USE_JOBSPY: ${{ vars.USE_JOBSPY }}
