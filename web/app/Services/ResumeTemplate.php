@@ -111,15 +111,31 @@ class ResumeTemplate
             ->take(8)->values()->all();
     }
 
-    /** HTML vindo da IA: mantém só as tags do editor e o alinhamento (remove scripts, links e outros atributos). */
+    /**
+     * Segurança: todo HTML que entra (navegador, IA, MCP) passa por aqui antes de ser salvo ou exportado.
+     * Mantém só as tags do editor e, nos estilos, apenas alinhamento, cor e tamanho de fonte com valores seguros.
+     * Remove scripts, eventos (onclick...), links, imagens, iframes e qualquer outro atributo.
+     */
     public static function sanitize(string $html): string
     {
-        $html = strip_tags($html, '<h1><h2><h3><p><ul><ol><li><strong><em><u><s><mark><br>');
+        $html = preg_replace('~<(script|style|iframe|object|embed|svg|math)\b.*?</\1>~is', '', $html);
+        $html = strip_tags($html, '<h1><h2><h3><p><ul><ol><li><strong><em><u><s><mark><br><span>');
 
         return preg_replace_callback('~<(\w+)(\s[^>]*)?>~', function (array $m): string {
-            $align = preg_match('~text-align:\s*(left|center|right|justify)~i', $m[2] ?? '', $a) ? ' style="text-align: '.strtolower($a[1]).'"' : '';
+            $attrs = $m[2] ?? '';
+            $style = preg_match('~\sstyle\s*=\s*"([^"]*)"~i', $attrs, $s) ? $s[1] : '';
+            $safe = [];
+            if (preg_match('~text-align:\s*(left|center|right|justify)~i', $style, $v)) {
+                $safe[] = 'text-align: '.strtolower($v[1]);
+            }
+            if (preg_match('~(?<![-\w])color:\s*(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))~i', $style, $v)) {
+                $safe[] = 'color: '.$v[1];
+            }
+            if (preg_match('~font-size:\s*(\d{1,2}(?:\.\d)?(?:pt|px))~i', $style, $v)) {
+                $safe[] = 'font-size: '.$v[1];
+            }
 
-            return '<'.strtolower($m[1]).$align.'>';
+            return '<'.strtolower($m[1]).($safe ? ' style="'.implode('; ', $safe).'"' : '').'>';
         }, $html);
     }
 

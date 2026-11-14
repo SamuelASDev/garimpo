@@ -1,4 +1,7 @@
 <x-guest-layout>
+    <h2 class="text-2xl font-bold text-gray-900">Crie sua conta grátis</h2>
+    <p class="mt-1 mb-8 text-sm text-gray-500">Leva menos de um minuto. Depois é só importar seu currículo.</p>
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 
@@ -39,14 +42,21 @@
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
         </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('login') }}">
-                {{ __('Already registered?') }}
-            </a>
-
-            <x-primary-button class="ms-4">
-                {{ __('Register') }}
-            </x-primary-button>
+        <!-- LGPD: aceite dos termos (obrigatório) e consentimento para a IA grátis (opcional) -->
+        <div class="mt-5 space-y-3 text-sm text-gray-600">
+            <label class="flex items-start gap-2">
+                <input type="checkbox" name="terms" value="1" required @checked(old('terms')) class="mt-0.5 rounded border-gray-300 text-emerald-600">
+                <span>Li e aceito os <a href="{{ route('legal.terms') }}" target="_blank" class="underline">Termos de Uso</a> e a <a href="{{ route('legal.privacy') }}" target="_blank" class="underline">Política de Privacidade</a>.</span>
+            </label>
+            <x-input-error :messages="$errors->get('terms')" />
+            <label class="flex items-start gap-2">
+                <input type="checkbox" name="ai_consent" value="1" @checked(old('ai_consent')) class="mt-0.5 rounded border-gray-300 text-emerald-600">
+                <span>(Opcional) Autorizo usar a IA grátis do Garimpo: o texto do meu currículo, <strong>sem telefone, e-mail e links de perfil</strong>, é enviado a provedores de IA fora do Brasil (Groq, Google, OpenRouter) para gerar e melhorar currículos. Posso desligar quando quiser.</span>
+            </label>
         </div>
+
+        <x-primary-button class="mt-6 w-full justify-center py-3">{{ __('Register') }}</x-primary-button>
+
+        <p class="mt-6 text-center text-sm text-gray-600">{{ __('Already registered?') }} <a href="{{ route('login') }}" class="font-medium text-emerald-700 hover:underline">Entrar</a></p>
     </form>
 </x-guest-layout>

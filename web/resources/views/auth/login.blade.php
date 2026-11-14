@@ -1,4 +1,7 @@
 <x-guest-layout>
+    <h2 class="text-2xl font-bold text-gray-900">Bem-vindo de volta</h2>
+    <p class="mt-1 mb-8 text-sm text-gray-500">Entre para ver suas vagas, currículos e candidaturas.</p>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
@@ -24,24 +27,18 @@
             <x-input-error :messages="$errors->get('password')" class="mt-2" />
         </div>
 
-        <!-- Remember Me -->
-        <div class="block mt-4">
+        <div class="flex items-center justify-between mt-4">
             <label for="remember_me" class="inline-flex items-center">
-                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
+                <input id="remember_me" type="checkbox" class="rounded border-gray-300 text-emerald-600 shadow-sm focus:ring-emerald-500" name="remember">
                 <span class="ms-2 text-sm text-gray-600">{{ __('Remember me') }}</span>
             </label>
-        </div>
-
-        <div class="flex items-center justify-end mt-4">
             @if (Route::has('password.request'))
-                <a class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                    {{ __('Forgot your password?') }}
-                </a>
+                <a class="text-sm text-emerald-700 hover:underline" href="{{ route('password.request') }}">{{ __('Forgot your password?') }}</a>
             @endif
-
-            <x-primary-button class="ms-3">
-                {{ __('Log in') }}
-            </x-primary-button>
         </div>
+
+        <x-primary-button class="mt-6 w-full justify-center py-3">{{ __('Log in') }}</x-primary-button>
+
+        <p class="mt-6 text-center text-sm text-gray-600">Ainda não tem conta? <a href="{{ route('register') }}" class="font-medium text-emerald-700 hover:underline">Criar conta grátis</a></p>
     </form>
 </x-guest-layout>

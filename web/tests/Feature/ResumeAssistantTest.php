@@ -50,7 +50,7 @@ class ResumeAssistantTest extends TestCase
         $this->actingAs($user)->postJson(route('jobs.resume.assistant', $job), ['message' => 'Adicione que usei Docker na Acme', 'html' => '<p>PHP</p>'])
             ->assertOk()
             ->assertJsonPath('reply', 'Adicionei o Docker.')
-            ->assertJsonPath('html', '<h1>Fulano</h1>alert(1)<p style="text-align: center">PHP, Docker</p>link');
+            ->assertJsonPath('html', '<h1>Fulano</h1><p style="text-align: center">PHP, Docker</p>link');
     }
 
     public function test_chat_question_returns_only_answer(): void

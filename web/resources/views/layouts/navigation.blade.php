@@ -3,7 +3,7 @@
         <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
                 <a href="{{ route('jobs.index') }}" class="flex items-center gap-2 font-bold text-gray-900">
-                    <span class="grid place-items-center w-8 h-8 rounded-lg bg-emerald-600 text-white text-sm">G</span>
+                    <x-application-logo class="w-8 h-8" />
                     {{ config('app.name') }}
                 </a>
                 <div class="hidden sm:flex gap-6 h-full">

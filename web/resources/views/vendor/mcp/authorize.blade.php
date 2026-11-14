@@ -30,6 +30,7 @@
     </style>
 
     <title>Autorizar acesso - {{ config('app.name', 'MCP Server') }}</title>
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 
     <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />

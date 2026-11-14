@@ -21,8 +21,9 @@ class TestUserSeeder extends Seeder
 
         $user = User::updateOrCreate(
             ['email' => env('TEST_USER_EMAIL', 'teste@garimpo.test')],
-            ['name' => 'Conta de Teste', 'password' => $password, 'email_verified_at' => now()],
+            ['name' => 'Conta de Teste', 'password' => $password],
         );
+        $user->forceFill(['email_verified_at' => now(), 'terms_accepted_at' => now(), 'ai_consent_at' => now()])->save();
 
         $user->resume()->updateOrCreate([], [
             'full_name' => 'Conta de Teste',

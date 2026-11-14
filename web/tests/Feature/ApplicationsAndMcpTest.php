@@ -68,10 +68,11 @@ class ApplicationsAndMcpTest extends TestCase
         Artisan::call('passport:client', ['--personal' => true, '--name' => 'Garimpo', '--provider' => 'users', '--no-interaction' => true]);
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post(route('ai.store'))->assertRedirect(route('ai.show'));
+        $this->actingAs($user)->post(route('ai.store'), ['app' => 'claude-code', 'label' => 'notebook', 'days' => 7])->assertRedirect(route('ai.show'));
         $token = session('token');
         $this->assertNotEmpty($token);
-        $this->actingAs($user)->get(route('ai.show'))->assertOk()->assertSee('claude mcp add')->assertSee('IAs conectadas agora: 1');
+        $this->actingAs($user)->get(route('ai.show'))->assertOk()->assertSee('claude mcp add')->assertSee('IAs conectadas agora: 1')->assertSee('Claude Code · notebook');
+        $this->assertTrue($user->tokens()->sole()->expires_at->between(now()->addDays(6), now()->addDays(8)));
 
         auth()->forgetGuards();
         $this->withHeaders(['Authorization' => "Bearer $token", 'Accept' => 'application/json, text/event-stream'])
@@ -118,5 +119,24 @@ class ApplicationsAndMcpTest extends TestCase
         $app = $user->jobApplications()->sole();
         GarimpoServer::actingAs($user)->tool(UpdateApplication::class, ['application_id' => $app->id, 'status' => 'entrevista', 'next_step' => 'Entrevista 05/12'])->assertOk();
         $this->assertSame('entrevista', $app->fresh()->status);
+    }
+
+    public function test_user_revokes_a_single_ai_connection_and_it_stops_working(): void
+    {
+        Artisan::call('passport:client', ['--personal' => true, '--name' => 'Garimpo', '--provider' => 'users', '--no-interaction' => true]);
+        $user = User::factory()->create();
+        $keep = $user->createToken('Codex · pc', ['mcp:use']);
+        $drop = $user->createToken('Cursor · trabalho', ['mcp:use']);
+
+        $this->actingAs($user)->delete(route('ai.revoke', $drop->token->id))->assertRedirect(route('ai.show'));
+        $this->assertTrue($drop->token->fresh()->revoked);
+        $this->assertFalse($keep->token->fresh()->revoked);
+
+        $other = User::factory()->create();
+        $this->actingAs($other)->delete(route('ai.revoke', $keep->token->id))->assertNotFound();
+
+        auth()->forgetGuards();
+        $this->withHeaders(['Authorization' => 'Bearer '.$drop->accessToken])
+            ->postJson('/mcp', ['jsonrpc' => '2.0', 'id' => 1, 'method' => 'tools/list'])->assertUnauthorized();
     }
 }

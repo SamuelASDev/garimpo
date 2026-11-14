@@ -34,13 +34,20 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+            'terms' => ['accepted'],
+            'ai_consent' => ['nullable', 'boolean'],
+        ], ['terms.accepted' => 'Para criar a conta, aceite os Termos de Uso e a Política de Privacidade.']);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
+        // LGPD: guarda quando aceitou os termos e se autorizou (opcional) o uso da IA grátis.
+        $user->forceFill([
+            'terms_accepted_at' => now(),
+            'ai_consent_at' => $request->boolean('ai_consent') ? now() : null,
+        ])->save();
 
         event(new Registered($user));
 

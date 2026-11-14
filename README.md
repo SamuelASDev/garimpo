@@ -65,6 +65,24 @@ php artisan passport:client --personal --name=Garimpo --provider=users
 
 As chaves ficam em `storage/oauth-*.key` (fora do Git). Domínios aceitos no login ficam em `config/mcp.php`.
 
+## Produção: segurança e LGPD
+
+No `.env` do servidor:
+
+```
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://seu-dominio
+SESSION_SECURE_COOKIE=true
+GARIMPO_CONTROLLER="Nome de quem responde pelos dados"
+GARIMPO_PRIVACY_EMAIL=contato-de-privacidade@seu-dominio
+```
+
+- Instale sem pacotes de desenvolvimento: `composer install --no-dev --optimize-autoloader`.
+- Site só em HTTPS (em produção o Garimpo envia HSTS).
+- Privacidade: política em `/privacidade`, termos em `/termos`, aceite registrado no cadastro, IA grátis só com
+  consentimento (contatos são mascarados antes do envio), exportação em Minha conta e exclusão completa da conta.
+
 ## Fontes de vagas
 
 Gupy, Programathor, Vagas.com, InfoJobs, Empregos.com.br, Robert Half, Michael Page e Randstad

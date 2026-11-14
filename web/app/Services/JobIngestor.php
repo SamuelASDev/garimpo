@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\JobPosting;
+use App\Services\ContactMasker;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -47,7 +48,8 @@ class JobIngestor
                 continue;
             }
 
-            $description = trim(strip_tags($item['description'] ?? ''));
+            // LGPD: e-mail/telefone de recrutadores não ficam no Garimpo (o anúncio original continua com eles).
+            $description = ContactMasker::strip(trim(strip_tags($item['description'] ?? '')));
             $fingerprint = self::fingerprint($item['title'], $item['company'] ?? '', $item['location'] ?? '');
             $existing = JobPosting::where('url', $item['url'])->first() ?? JobPosting::where('fingerprint', $fingerprint)->first();
 

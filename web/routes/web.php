@@ -4,6 +4,8 @@ use App\Http\Controllers\AiConnectionController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobController;
+use App\Http\Controllers\LegalController;
+use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumeAssistantController;
 use App\Http\Controllers\ResumeController;
@@ -11,6 +13,8 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [JobController::class, 'index'])->name('jobs.index');
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
+Route::get('/privacidade', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('/termos', [LegalController::class, 'terms'])->name('legal.terms');
 
 Route::middleware('auth')->group(function () {
     Route::redirect('/dashboard', '/curriculos')->name('dashboard');
@@ -20,8 +24,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/curriculo', [ResumeController::class, 'edit'])->name('resume.edit');
     Route::put('/curriculo', [ResumeController::class, 'update'])->name('resume.update');
     Route::post('/curriculo/importar', [ResumeController::class, 'import'])->middleware('throttle:10,1')->name('resume.import');
-    Route::post('/exportar/word', [ExportController::class, 'word'])->name('export.word');
-    Route::post('/exportar/pdf', [ExportController::class, 'pdf'])->name('export.pdf');
+    Route::post('/exportar/word', [ExportController::class, 'word'])->middleware('throttle:20,1')->name('export.word');
+    Route::post('/exportar/pdf', [ExportController::class, 'pdf'])->middleware('throttle:20,1')->name('export.pdf');
     Route::post('/vagas/{job}/adaptar', [JobController::class, 'tailor'])->name('jobs.tailor');
     Route::get('/vagas/{job}/curriculo', [JobController::class, 'resume'])->name('jobs.resume');
     Route::put('/vagas/{job}/curriculo', [JobController::class, 'saveResume'])->name('jobs.resume.update');
@@ -35,8 +39,12 @@ Route::middleware('auth')->group(function () {
     Route::delete('/candidaturas/{application}', [JobApplicationController::class, 'destroy'])->name('applications.destroy');
 
     Route::get('/conectar-ia', [AiConnectionController::class, 'show'])->name('ai.show');
-    Route::post('/conectar-ia', [AiConnectionController::class, 'store'])->name('ai.store');
+    Route::post('/conectar-ia', [AiConnectionController::class, 'store'])->middleware('throttle:10,1')->name('ai.store');
     Route::delete('/conectar-ia', [AiConnectionController::class, 'destroy'])->name('ai.destroy');
+    Route::delete('/conectar-ia/{tokenId}', [AiConnectionController::class, 'revoke'])->name('ai.revoke');
+
+    Route::patch('/conta/privacidade', [PrivacyController::class, 'updateConsent'])->name('privacy.consent');
+    Route::get('/conta/meus-dados', [PrivacyController::class, 'export'])->middleware('throttle:5,1')->name('privacy.export');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

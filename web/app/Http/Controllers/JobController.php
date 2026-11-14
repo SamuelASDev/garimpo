@@ -63,6 +63,9 @@ class JobController extends Controller
         $key = 'tailor:'.$user->id;
         $notice = null;
         try {
+            if (! $user->hasAiConsent()) {
+                throw new \RuntimeException('Você ainda não autorizou a IA grátis. Ative em Minha conta → Privacidade (seu currículo vai sem telefone, e-mail e links).');
+            }
             if (RateLimiter::tooManyAttempts($key, 5)) {
                 throw new \RuntimeException('Limite de 5 currículos por dia com a IA grátis atingido. Use "Conectar IA" para gerar sem limite.');
             }
@@ -103,6 +106,7 @@ class JobController extends Controller
     public function saveResume(Request $request, JobPosting $job, AtsMatcher $matcher): JsonResponse
     {
         $data = $request->validate(['html' => ['required', 'string', 'max:200000']]);
+        $data['html'] = ResumeTemplate::sanitize($data['html']);
         $tailoring = $this->tailoringFor($request, $job);
         $tailoring->update(['content' => $data['html']]);
 

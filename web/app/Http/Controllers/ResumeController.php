@@ -46,7 +46,7 @@ class ResumeController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate(['html' => ['required', 'string', 'max:200000']]);
-        $request->user()->resume()->updateOrCreate([], ['html' => $data['html']]);
+        $request->user()->resume()->updateOrCreate([], ['html' => ResumeTemplate::sanitize($data['html'])]);
 
         return response()->json(['message' => 'Currículo salvo!']);
     }
@@ -55,6 +55,10 @@ class ResumeController extends Controller
     public function import(Request $request, AiWriter $writer, ResumeTemplate $template): JsonResponse
     {
         $data = $request->validate(['text' => ['required', 'string', 'min:50', 'max:60000']]);
+
+        if (! $request->user()->hasAiConsent()) {
+            return response()->json(['html' => $template->fromPlainText($data['text']), 'message' => 'Importei o texto sem formatar. Você ainda não autorizou a IA grátis. Ative em Minha conta → Privacidade (seu currículo vai sem telefone, e-mail e links).']);
+        }
 
         $key = 'import:'.$request->user()->id;
         if (RateLimiter::tooManyAttempts($key, 10)) {

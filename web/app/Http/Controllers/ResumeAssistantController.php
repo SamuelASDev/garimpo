@@ -70,6 +70,10 @@ class ResumeAssistantController extends Controller
 
     private function limitReached(Request $request): ?JsonResponse
     {
+        if (! $request->user()->hasAiConsent()) {
+            return response()->json(['reply' => 'Você ainda não autorizou a IA grátis. Ative em Minha conta → Privacidade (seu currículo vai sem telefone, e-mail e links).', 'message' => 'Você ainda não autorizou a IA grátis. Ative em Minha conta → Privacidade (seu currículo vai sem telefone, e-mail e links).', 'html' => null], 403);
+        }
+
         $key = 'assistant:'.$request->user()->id;
         if (RateLimiter::tooManyAttempts($key, self::DAILY_MESSAGES)) {
             return response()->json([

@@ -21,6 +21,24 @@ class User extends Authenticatable implements OAuthenticatable
     /** @use HasFactory<UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
 
+    /** LGPD: a IA grátis só recebe dados de quem autorizou. */
+    public function hasAiConsent(): bool
+    {
+        return $this->ai_consent_at !== null;
+    }
+
+    /** LGPD: ao excluir a conta, nenhum acesso de IA conectada pode sobrar. */
+    protected static function booted(): void
+    {
+        static::deleting(function (User $user): void {
+            $tokenIds = $user->tokens()->pluck('id');
+            \Illuminate\Support\Facades\DB::table('oauth_refresh_tokens')->whereIn('access_token_id', $tokenIds)->delete();
+            $user->tokens()->delete();
+            \Illuminate\Support\Facades\DB::table('oauth_auth_codes')->where('user_id', $user->id)->delete();
+            \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+        });
+    }
+
     public function resume(): HasOne
     {
         return $this->hasOne(Resume::class);
@@ -41,6 +59,8 @@ class User extends Authenticatable implements OAuthenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'terms_accepted_at' => 'datetime',
+            'ai_consent_at' => 'datetime',
         ];
     }
 }

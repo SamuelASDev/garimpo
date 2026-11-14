@@ -138,7 +138,12 @@ class AiWriter
     /** @return array{data: array<string, mixed>, provider: string} */
     private function json(string $prompt, string $requiredKey = 'nome'): array
     {
-        foreach (['groq', 'gemini', 'openrouter'] as $provider) {
+        // LGPD: telefone, e-mail, CPF e links de perfil não saem do Garimpo; voltam só na resposta.
+        $masker = new ContactMasker;
+        $prompt = $masker->mask($prompt);
+
+        // Gemini por último: a camada grátis do Google pode usar o conteúdo para treinar modelos.
+        foreach (['groq', 'openrouter', 'gemini'] as $provider) {
             if (! config("services.$provider.key")) {
                 continue;
             }
@@ -146,7 +151,7 @@ class AiWriter
                 $raw = $this->$provider($prompt);
                 $data = json_decode(trim(preg_replace('/^```(json)?|```$/m', '', $raw)), true);
                 if (is_array($data) && array_key_exists($requiredKey, $data)) {
-                    return ['data' => $data, 'provider' => $provider];
+                    return ['data' => $masker->unmask($data), 'provider' => $provider];
                 }
             } catch (\Throwable $e) {
                 report($e);

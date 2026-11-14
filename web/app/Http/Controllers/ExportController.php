@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\ResumeTemplate;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Http\Request;
@@ -97,10 +98,13 @@ class ExportController extends Controller
     /** @return array{html: string, filename?: ?string} */
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'html' => ['required', 'string', 'max:200000'],
             'filename' => ['nullable', 'string', 'max:80'],
         ]);
+        $data['html'] = ResumeTemplate::sanitize($data['html']); // nada de HTML arbitrário no Dompdf/PhpWord
+
+        return $data;
     }
 
     private function filename(array $data): string
