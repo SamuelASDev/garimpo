@@ -49,7 +49,12 @@ class AiWriter
 
 
         Adapte o currículo abaixo para a vaga. Destaque primeiro o que a pessoa já tem e que a vaga pede,
-        usando os MESMOS termos da vaga (o ATS procura a palavra literal). Ajuste o objetivo para o cargo da vaga.
+        usando os MESMOS termos da vaga (o ATS procura a palavra literal).
+        OBJETIVO: deve parecer escrito pela própria pessoa, nunca por IA. NÃO cite o nome da empresa,
+        o título exato da vaga nem expressões como "esta vaga" ou "nesta empresa".
+        "cargo" = cargo e nível genéricos separados por " | " (ex.: "Desenvolvedor Júnior | Back-end PHP").
+        "texto" = uma ou duas frases no estilo: "Busco oportunidade como [cargo] na área de [área], onde posso
+        aplicar e expandir meus conhecimentos em [habilidades que a pessoa já tem], contribuindo com resultados para a equipe."
         Para cada palavra-chave da vaga que NÃO aparece no currículo ({$missing}), coloque um aviso
         [[ADICIONE: ...]] no lugar certo, dizendo o que a pessoa deve escrever SE tiver essa experiência.
         Mantenha no JSON todo o conteúdo real da pessoa (ela decide o que tirar) e inclua também a chave
