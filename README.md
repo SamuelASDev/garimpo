@@ -69,7 +69,7 @@ GitHub Actions (a cada 4h)                       Seu servidor (Laravel)
 
 | Programa | Versão | Observação |
 |---|---|---|
-| PHP | **8.4 ou mais novo** | Com as extensões `sodium`, `openssl`, `mbstring`, `xml`, `fileinfo`, `pdo_sqlite` (ou `pdo_mysql`) |
+| PHP | **8.3 ou mais novo** | Com as extensões `sodium`, `openssl`, `mbstring`, `xml`, `fileinfo`, `pdo_sqlite` (ou `pdo_mysql`) |
 | Composer | 2.x | |
 | Node.js | 20.19+ ou 22.12+ | Só para compilar CSS/JS |
 | Python | 3.10+ | Só se for rodar o coletor |
@@ -181,7 +181,7 @@ Funciona no plano de hospedagem compartilhada (Premium/Business), com SSH.
    `public_html/garimpo` (onde você vai clonar o repositório). O `.htaccess` da raiz do repositório encaminha tudo
    para `web/public` e bloqueia arquivos sensíveis (`.env`, `.git`, banco, chaves). Se o hPanel deixar escolher a
    pasta `public_html/garimpo/web/public` direto, também funciona (e o `.htaccess` da raiz nem é usado).
-2. **PHP**: hPanel → Avançado → Configuração do PHP → versão **8.4 ou mais nova**, com `sodium` ligado.
+2. **PHP**: hPanel → Avançado → Configuração do PHP → versão **8.3 ou mais nova**, com `sodium` ligado.
 3. **Banco MySQL**: hPanel → Bancos de dados → crie banco, usuário e senha.
 4. **SSL**: ative o certificado gratuito para o subdomínio (o site precisa de HTTPS).
 5. **SSH**: hPanel → Avançado → Acesso SSH → ative e anote host, porta e usuário.
@@ -337,7 +337,7 @@ Se mudou CSS/JS, gere de novo o `public/build` no seu computador e envie.
 
 | Sintoma | Solução |
 |---|---|
-| `composer install` reclama da versão do PHP | O projeto precisa de PHP **8.4+**. No hPanel, troque a versão do PHP. |
+| `composer install` reclama da versão do PHP | O projeto precisa de PHP **8.3+**. No hPanel, troque a versão do PHP. |
 | Erro com `sodium` ou `lcobucci/jwt` | Ligue a extensão `sodium` (no XAMPP: tire o `;` de `extension=sodium` no `php.ini`). |
 | Página sem estilo / erro "Vite manifest not found" | Falta a pasta `public/build`: rode `npm run build` e envie. |
 | "Personal access client not found" ao gerar token | Rode `php artisan passport:client --personal --name=Garimpo --provider=users`. |
