@@ -2,6 +2,9 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         <a href="{{ url()->previous() === url()->current() ? route('jobs.index') : url()->previous() }}" class="text-sm text-gray-500 hover:text-gray-800">&larr; Voltar</a>
 
+        @if (session('status'))
+            <div class="p-4 rounded-lg bg-emerald-50 text-emerald-700 text-sm">{{ session('status') }}</div>
+        @endif
         @if (session('error'))
             <div class="p-4 rounded-lg bg-red-50 text-red-700 text-sm">{{ session('error') }}</div>
         @endif
@@ -18,6 +21,12 @@
             <a href="{{ $job->url }}" target="_blank" rel="noopener nofollow" class="mt-5 inline-block px-5 py-2.5 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">
                 Ver vaga completa e se candidatar em {{ ucfirst($job->source) }} &nearr;
             </a>
+            @auth
+                <form method="POST" action="{{ route('jobs.apply', $job) }}" class="inline">
+                    @csrf
+                    <button class="mt-5 ms-2 px-5 py-2.5 rounded-lg border border-gray-300 text-sm hover:bg-gray-50">✓ Me candidatei</button>
+                </form>
+            @endauth
         </div>
 
         <div class="bg-white rounded-xl border border-gray-200 p-6">

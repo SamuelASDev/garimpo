@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * Gera o currículo adaptado usando provedores com camada grátis (Gemini, Groq).
+ * Gera o currículo adaptado usando provedores com camada grátis (Gemini, Groq, OpenRouter).
  * Tenta cada provedor configurado em ordem até um responder.
  */
 class AiWriter
@@ -18,7 +18,7 @@ class AiWriter
     {
         $prompt = $this->prompt($resume, $job, $match);
 
-        foreach (['gemini', 'groq'] as $provider) {
+        foreach (['gemini', 'groq', 'openrouter'] as $provider) {
             if (! config("services.$provider.key")) {
                 continue;
             }
@@ -29,7 +29,7 @@ class AiWriter
             }
         }
 
-        throw new RuntimeException('Nenhuma IA disponível agora. Configure GEMINI_API_KEY ou GROQ_API_KEY, ou use sua própria IA pelo MCP.');
+        throw new RuntimeException('Nenhuma IA disponível agora. Configure GEMINI_API_KEY, GROQ_API_KEY ou OPENROUTER_API_KEY, ou use sua própria IA pelo MCP.');
     }
 
     public function prompt(Resume $resume, JobPosting $job, array $match): string
@@ -65,7 +65,7 @@ class AiWriter
     {
         $model = config('services.gemini.model');
 
-        return Http::timeout(60)
+        return Http::timeout(45)
             ->withHeaders(['x-goog-api-key' => config('services.gemini.key')])
             ->post("https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent", [
                 'contents' => [['parts' => [['text' => $prompt]]]],
@@ -74,11 +74,22 @@ class AiWriter
 
     private function groq(string $prompt): string
     {
-        return Http::timeout(60)
-            ->withToken(config('services.groq.key'))
-            ->post('https://api.groq.com/openai/v1/chat/completions', [
-                'model' => config('services.groq.model'),
+        return $this->openAiCompatible('https://api.groq.com/openai/v1/chat/completions', 'groq', $prompt);
+    }
+
+    private function openrouter(string $prompt): string
+    {
+        return $this->openAiCompatible('https://openrouter.ai/api/v1/chat/completions', 'openrouter', $prompt);
+    }
+
+    /** Groq e OpenRouter usam o mesmo formato de API (compatível com OpenAI). */
+    private function openAiCompatible(string $url, string $provider, string $prompt): string
+    {
+        return Http::timeout(45)
+            ->withToken(config("services.$provider.key"))
+            ->post($url, [
+                'model' => config("services.$provider.model"),
                 'messages' => [['role' => 'user', 'content' => $prompt]],
-            ])->throw()->json('choices.0.message.content') ?? throw new RuntimeException('Groq sem resposta');
+            ])->throw()->json('choices.0.message.content') ?? throw new RuntimeException("$provider sem resposta");
     }
 }

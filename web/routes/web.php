@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\AiConnectionController;
+use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumeController;
@@ -14,6 +16,16 @@ Route::middleware('auth')->group(function () {
     Route::put('/curriculo', [ResumeController::class, 'update'])->name('resume.update');
     Route::post('/vagas/{job}/adaptar', [JobController::class, 'tailor'])->name('jobs.tailor');
     Route::get('/vagas/{job}/curriculo', [JobController::class, 'resume'])->name('jobs.resume');
+    Route::post('/vagas/{job}/candidatura', [JobApplicationController::class, 'storeFromJob'])->name('jobs.apply');
+
+    Route::get('/candidaturas', [JobApplicationController::class, 'index'])->name('applications.index');
+    Route::post('/candidaturas', [JobApplicationController::class, 'store'])->name('applications.store');
+    Route::patch('/candidaturas/{application}', [JobApplicationController::class, 'update'])->name('applications.update');
+    Route::delete('/candidaturas/{application}', [JobApplicationController::class, 'destroy'])->name('applications.destroy');
+
+    Route::get('/conectar-ia', [AiConnectionController::class, 'show'])->name('ai.show');
+    Route::post('/conectar-ia', [AiConnectionController::class, 'store'])->name('ai.store');
+    Route::delete('/conectar-ia', [AiConnectionController::class, 'destroy'])->name('ai.destroy');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
