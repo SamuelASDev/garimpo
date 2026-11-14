@@ -87,9 +87,18 @@ class ResumeEditorTest extends TestCase
     public function test_export_word_downloads_docx(): void
     {
         $response = $this->actingAs(User::factory()->create())
-            ->post(route('export.word'), ['html' => '<h1>Fulano</h1><h2>Experiência</h2><ul><li><p>Item</p></li></ul>', 'filename' => 'Currículo Teste']);
+            ->post(route('export.word'), ['html' => '<h1 style="text-align: center">Fulano</h1><h2 style="text-align: left">Experiência</h2><p>Curso<br>Faculdade &nbsp;Exemplo</p><ul><li><p>Item <mark>ADICIONE: x</mark></p></li></ul>', 'filename' => 'Currículo Teste']);
 
         $response->assertOk()->assertDownload('curriculo-teste.docx');
         $this->assertStringStartsWith('PK', $response->streamedContent()); // .docx é um zip
+    }
+
+    public function test_export_pdf_downloads_real_pdf_file(): void
+    {
+        $response = $this->actingAs(User::factory()->create())
+            ->post(route('export.pdf'), ['html' => '<h1 style="text-align: center">Fulano de Tal</h1><h2>Experiência</h2><p>Programação em PHP</p>', 'filename' => 'Currículo Teste']);
+
+        $response->assertOk()->assertDownload('curriculo-teste.pdf');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
     }
 }

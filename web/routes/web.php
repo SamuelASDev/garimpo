@@ -17,6 +17,7 @@ Route::middleware('auth')->group(function () {
     Route::put('/curriculo', [ResumeController::class, 'update'])->name('resume.update');
     Route::post('/curriculo/importar', [ResumeController::class, 'import'])->middleware('throttle:10,1')->name('resume.import');
     Route::post('/exportar/word', [ExportController::class, 'word'])->name('export.word');
+    Route::post('/exportar/pdf', [ExportController::class, 'pdf'])->name('export.pdf');
     Route::post('/vagas/{job}/adaptar', [JobController::class, 'tailor'])->name('jobs.tailor');
     Route::get('/vagas/{job}/curriculo', [JobController::class, 'resume'])->name('jobs.resume');
     Route::put('/vagas/{job}/curriculo', [JobController::class, 'saveResume'])->name('jobs.resume.update');

@@ -16,6 +16,7 @@
                 'html' => $tailoring->content,
                 'saveUrl' => route('jobs.resume.update', $job),
                 'wordUrl' => route('export.word'),
+                'pdfUrl' => route('export.pdf'),
                 'filename' => 'curriculo-'.$job->title,
                 'match' => $match,
                 'placeholders' => $placeholders,

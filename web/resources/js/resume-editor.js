@@ -31,7 +31,7 @@ async function pdfToText(file) {
 }
 
 export function registerResumeEditor(Alpine) {
-    Alpine.data('resumeEditor', ({ html, saveUrl, importUrl = null, wordUrl, filename, match = null, placeholders = [], recommendations = [] }) => {
+    Alpine.data('resumeEditor', ({ html, saveUrl, importUrl = null, wordUrl, pdfUrl, filename, match = null, placeholders = [], recommendations = [] }) => {
         let editor = null; // fora do estado reativo do Alpine (o TipTap não funciona dentro de proxy)
 
         return {
@@ -111,18 +111,23 @@ export function registerResumeEditor(Alpine) {
                 }
             },
 
-            exportPdf() {
-                window.print(); // "Salvar como PDF" gera texto real, que o ATS consegue ler
-            },
-
-            exportWord() {
-                const form = Object.assign(document.createElement('form'), { method: 'POST', action: wordUrl });
+            /** Baixa o currículo como arquivo (.pdf ou .docx) gerado no servidor. */
+            download(url) {
+                const form = Object.assign(document.createElement('form'), { method: 'POST', action: url });
                 for (const [name, value] of Object.entries({ _token: csrf(), html: editor.getHTML(), filename })) {
                     form.append(Object.assign(document.createElement('input'), { type: 'hidden', name, value }));
                 }
                 document.body.append(form);
                 form.submit();
                 form.remove();
+            },
+
+            exportPdf() {
+                this.download(pdfUrl);
+            },
+
+            exportWord() {
+                this.download(wordUrl);
             },
 
             /** Recomendação "remover": apaga o item (tópico ou parágrafo) que contém o trecho. */

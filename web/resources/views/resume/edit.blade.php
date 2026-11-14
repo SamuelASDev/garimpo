@@ -13,6 +13,7 @@
                 'saveUrl' => route('resume.update'),
                 'importUrl' => route('resume.import'),
                 'wordUrl' => route('export.word'),
+                'pdfUrl' => route('export.pdf'),
                 'filename' => 'curriculo-'.auth()->user()->name,
                 'placeholders' => \App\Services\ResumeTemplate::placeholders($html),
             ]">
