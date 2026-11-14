@@ -42,6 +42,7 @@ class JobController extends Controller
 
     public function show(Request $request, JobPosting $job, AtsMatcher $matcher): View
     {
+        $job = $job->forUser($request->user()); // usa a descrição colada pela pessoa, se houver
         $resume = $request->user()?->resume;
 
         return view('jobs.show', [
@@ -55,6 +56,7 @@ class JobController extends Controller
     /** Cria o currículo para a vaga (IA grátis; sem IA, copia o currículo base) e abre o editor. */
     public function tailor(Request $request, JobPosting $job, AtsMatcher $matcher, AiWriter $writer, ResumeTemplate $template): RedirectResponse
     {
+        $job = $job->forUser($request->user()); // usa a descrição colada pela pessoa, se houver
         $user = $request->user();
         if (! $user->resume) {
             return redirect()->route('resume.edit')->with('error', 'Primeiro monte ou importe o seu currículo.');
@@ -92,6 +94,7 @@ class JobController extends Controller
     /** Editor do currículo adaptado + painel do que falta. */
     public function resume(Request $request, JobPosting $job, AtsMatcher $matcher): View
     {
+        $job = $job->forUser($request->user()); // usa a descrição colada pela pessoa, se houver
         $tailoring = $this->tailoringFor($request, $job);
         $draft = new Resume(['html' => $tailoring->content]);
 
@@ -105,6 +108,7 @@ class JobController extends Controller
 
     public function saveResume(Request $request, JobPosting $job, AtsMatcher $matcher): JsonResponse
     {
+        $job = $job->forUser($request->user()); // usa a descrição colada pela pessoa, se houver
         $data = $request->validate(['html' => ['required', 'string', 'max:200000']]);
         $data['html'] = ResumeTemplate::sanitize($data['html']);
         $tailoring = $this->tailoringFor($request, $job);

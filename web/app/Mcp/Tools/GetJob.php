@@ -16,7 +16,7 @@ class GetJob extends Tool
     public function handle(Request $request, AtsMatcher $matcher): Response
     {
         $data = $request->validate(['job_id' => ['required', 'integer']]);
-        $job = JobPosting::find($data['job_id']);
+        $job = JobPosting::find($data['job_id'])?->forUser($request->user());
         if (! $job) {
             return Response::error('Vaga não encontrada.');
         }

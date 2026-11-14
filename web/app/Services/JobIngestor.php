@@ -21,11 +21,18 @@ class JobIngestor
      * Das URLs informadas, devolve as que o coletor deve abrir para pegar a descrição completa:
      * vagas novas ou que estão salvas só com o resumo.
      *
-     * @param  list<string>  $urls
+     * Com títulos (`[url => título]`), também descarta o que não é TI: a vaga seria ignorada na ingestão,
+     * então não vale abrir a página dela (economiza acessos e evita bloqueio dos sites).
+     *
+     * @param  list<string>|array<string, string>  $urls
      * @return list<string>
      */
     public function pendingDescriptions(array $urls): array
     {
+        if (! array_is_list($urls)) {
+            $urls = array_keys(array_filter($urls, fn ($title): bool => is_string($title) && $this->classifier->isTech($title)));
+        }
+
         $complete = JobPosting::whereIn('url', $urls)
             ->whereRaw('length(description) >= ?', [self::SHORT_DESCRIPTION])
             ->pluck('url')->all();

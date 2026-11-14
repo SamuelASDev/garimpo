@@ -67,8 +67,14 @@ class JobDescriptionFormatter
         // Listas com hífen na mesma linha: "...estabelecidos;- Realizar" / ": - Realizar".
         $text = preg_replace('~(?<=[;:.])\s*-\s+(?=\S)~u', "\n- ", $text);
 
-        // Limpeza final: espaços nas pontas e no máximo uma linha em branco seguida.
+        // Dados pessoais de consultores (Michael Page e afins): "Contato\nNome Sobrenome" e "Nome do consultor Fulano".
+        $text = preg_replace('~^\s*Contato\s*\n\s*\p{Lu}[\p{L}\'-]+(?:\s+\p{Lu}[\p{L}\'-]+){0,4}\s*$~mu', '', $text);
+        $text = preg_replace('~\s*Nome do consultor\s+\p{Lu}[\p{L}\'-]+(?:\s+(?!Refer)\p{Lu}[\p{L}\'-]+){0,3}~u', '', $text);
+        $text = preg_replace('~\s*Refer[eê]ncia da vaga\s*:?\s*[A-Z]{2,4}-[\w-]+~iu', '', $text);
+
+        // Limpeza final: espaços nas pontas, textos de botões/links e no máximo uma linha em branco seguida.
         $lines = array_map('trim', explode("\n", $text));
+        $lines = array_map(fn (string $l): string => self::isUiNoise($l) ? '' : $l, $lines);
 
         return trim(preg_replace("~\n{3,}~", "\n\n", implode("\n", $lines)));
     }
@@ -100,6 +106,28 @@ class JobDescriptionFormatter
         }
 
         return Str::markdown(implode("\n", $md), ['html_input' => 'strip', 'allow_unsafe_links' => false]);
+    }
+
+    /** Textos de botões e links que os sites deixam no meio da descrição. */
+    private const UI_NOISE = [
+        'salvar vaga', 'salvar', 'candidate-se', 'candidatar-se', 'candidate-se agora', 'candidatar', 'quero me candidatar',
+        'aplicar', 'aplicar agora', 'inscreva-se', 'inscrever-se', 'enviar currículo', 'enviar curriculo', 'compartilhar',
+        'compartilhar vaga', 'compartilhe esta vaga', 'compartilhe', 'voltar', 'voltar à pesquisa', 'voltar a pesquisa',
+        'voltar para as vagas', 'ver mais', 'ver menos', 'leia mais', 'mostrar mais', 'mostrar menos', 'ver vaga',
+        'ver detalhes', 'mais detalhes', 'denunciar vaga', 'denunciar', 'imprimir', 'copiar link', 'favoritar',
+        'seguir empresa', 'seguir', 'vagas similares', 'empregos similares', 'referência da vaga', 'referencia da vaga',
+        'apply', 'apply now', 'save job', 'share',
+    ];
+
+    private static function isUiNoise(string $line): bool
+    {
+        $plain = mb_strtolower(trim($line, " \t*-•·#>|"));
+
+        return $plain === ''
+            || in_array($plain, self::UI_NOISE, true)
+            || preg_match('~^[?!.:;,•·*\-–—]+$~u', $plain)          // pontuação ou marcador sozinho
+            || preg_match('~^(#\w+\s*)+$~u', trim($line))          // só hashtags (#VagaUrgente)
+            || preg_match('~^jn-\d{6}-\d+$~i', $plain);             // código de referência sozinho
     }
 
     private static function isSection(string $line): bool

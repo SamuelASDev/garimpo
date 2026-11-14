@@ -393,7 +393,8 @@ DETAIL_SOURCES = {"programathor", "vagas.com", "infojobs", "empregos.com", "rand
 
 def text_block(fragment: str) -> str:
     """Como text(), mas mantém quebras de linha de parágrafos, listas e <br>."""
-    fragment = re.sub(r"(?is)<(script|style|noscript)\b.*?</\1>", " ", fragment)  # ex.: JSON-LD dentro do bloco da vaga
+    fragment = re.sub(r"(?is)<(script|style|noscript|button|form|nav)\b.*?</\1>", " ", fragment)  # JSON-LD, botões, formulários
+    fragment = re.sub(r"(?is)<a\b[^>]*class=\"[^\"]*\b(btn|button)[^\"]*\"[^>]*>.*?</a>", " ", fragment)  # links com cara de botão
     fragment = re.sub(r"(?i)<br\s*/?>|</p>|</li>|</h\d>|</div>", "\n", fragment)
     fragment = re.sub(r"(?i)<li[^>]*>", "\n• ", fragment)
     plain = html.unescape(re.sub(r"<[^>]+>", " ", fragment))
@@ -411,7 +412,8 @@ def detail_description(job: dict) -> str:
         return text_block(page[start:end]) if start >= 0 and end > start else ""
     if job["source"] == "michaelpage":
         start = page.find('<div id="job-description">')
-        end = page.find('id="block-similar-jobs', start)
+        end = page.find('block-similar-jobs', start)
+        end = page.rfind("<", start, end)  # corta no começo da tag, não no meio dela
         return text_block(page[start:end]) if start >= 0 and end > start else ""
     # Vagas.com, InfoJobs, Empregos.com.br e Randstad publicam a vaga em JSON-LD (schema.org/JobPosting).
     for block in re.findall(r'<script[^>]*application/ld\+json[^>]*>(.*?)</script>', page, re.S):
@@ -454,24 +456,35 @@ def enrich(jobs: list[dict]) -> None:
     if not candidates:
         return
     try:
-        pending = set(api("/pending", {"urls": [j["url"] for j in candidates]})["urls"])
+        # Manda o título junto: o site só devolve as vagas de TI (as outras seriam descartadas mesmo).
+        payload = {"jobs": [{"url": j["url"], "title": j["title"][:500]} for j in candidates]}
+        pending = set(api("/pending", payload)["urls"])
     except Exception as exc:
         print(f"[detalhes] não consegui consultar o site: {exc}", file=sys.stderr)
         return
     done = 0
+    paused = set()  # sites que pediram calma (HTTP 429): o resto fica para a próxima rodada
     for job in candidates:
-        if job["url"] not in pending:
+        host = urllib.parse.urlparse(job["url"]).netloc
+        if job["url"] not in pending or host in paused:
             continue
         try:
             description = detail_description(job)
+        except urllib.error.HTTPError as exc:
+            if exc.code == 429:
+                paused.add(host)
+                print(f"[detalhes] {host} pediu para ir mais devagar (429): pausado nesta rodada", file=sys.stderr)
+            else:
+                print(f"[detalhes] {job['url']}: {exc}", file=sys.stderr)
+            continue
         except Exception as exc:
             print(f"[detalhes] {job['url']}: {exc}", file=sys.stderr)
             continue
         if len(description) > len(job.get("description") or ""):
             job["description"] = description
             done += 1
-        time.sleep(1)
-    print(f"[detalhes] {done} descrições completas de {len(pending)} vagas pendentes")
+        time.sleep(1.5)
+    print(f"[detalhes] {done} descrições completas de {len(pending)} vagas de TI pendentes")
 
 
 def send(jobs: list[dict]) -> None:

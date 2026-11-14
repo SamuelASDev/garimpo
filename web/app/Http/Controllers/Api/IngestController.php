@@ -39,13 +39,24 @@ class IngestController extends Controller
         ]);
     }
 
-    /** Quais destas URLs ainda precisam da descrição completa (novas ou só com resumo). */
+    /**
+     * Quais vagas ainda precisam da descrição completa (novas ou só com resumo).
+     * Aceita `jobs: [{url, title}]` (filtra o que não é TI) ou o formato antigo `urls: [...]`.
+     */
     public function pending(Request $request, JobIngestor $ingestor): JsonResponse
     {
         $this->authorizeCollector($request);
-        $data = $request->validate(['urls' => ['required', 'array', 'max:3000'], 'urls.*' => ['string', 'max:1000']]);
+        $data = $request->validate([
+            'jobs' => ['required_without:urls', 'array', 'max:3000'],
+            'jobs.*.url' => ['required', 'string', 'max:1000'],
+            'jobs.*.title' => ['required', 'string', 'max:500'],
+            'urls' => ['required_without:jobs', 'array', 'max:3000'],
+            'urls.*' => ['string', 'max:1000'],
+        ]);
 
-        return response()->json(['urls' => $ingestor->pendingDescriptions($data['urls'])]);
+        $input = isset($data['jobs']) ? array_column($data['jobs'], 'title', 'url') : $data['urls'];
+
+        return response()->json(['urls' => $ingestor->pendingDescriptions($input)]);
     }
 
     private function authorizeCollector(Request $request): void

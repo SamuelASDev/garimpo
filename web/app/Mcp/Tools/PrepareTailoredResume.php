@@ -17,7 +17,7 @@ class PrepareTailoredResume extends Tool
     public function handle(Request $request, AtsMatcher $matcher, AiWriter $writer): Response
     {
         $data = $request->validate(['job_id' => ['required', 'integer']]);
-        $job = JobPosting::find($data['job_id']);
+        $job = JobPosting::find($data['job_id'])?->forUser($request->user());
         $resume = $request->user()?->resume;
 
         if (! $job) {

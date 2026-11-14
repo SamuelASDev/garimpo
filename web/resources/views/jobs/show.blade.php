@@ -38,7 +38,7 @@
                     {!! \App\Services\JobDescriptionFormatter::toHtml($job->description ?: (string) $job->summary) !!}
                 </div>
                 @if (mb_strlen((string) $job->description) < 400)
-                    <p class="mt-4 text-xs text-gray-400">O site de origem só mostra um resumo. Veja a descrição completa no link da vaga.</p>
+                    <p class="mt-4 text-xs text-gray-400">O site de origem só mostra um resumo. Veja a descrição completa no link da vaga; ao gerar o currículo para esta vaga, você pode colar o texto completo para a comparação ficar precisa.</p>
                 @endif
             </article>
 

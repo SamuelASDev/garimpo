@@ -6,6 +6,7 @@ use App\Http\Controllers\JobAlertController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\LegalController;
+use App\Http\Controllers\PastedDescriptionController;
 use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumeAssistantController;
@@ -32,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/vagas/{job}/curriculo', [JobController::class, 'resume'])->name('jobs.resume');
     Route::put('/vagas/{job}/curriculo', [JobController::class, 'saveResume'])->name('jobs.resume.update');
     Route::delete('/vagas/{job}/curriculo', [JobController::class, 'destroyResume'])->name('jobs.resume.destroy');
+    Route::put('/vagas/{job}/descricao', [PastedDescriptionController::class, 'store'])->middleware('throttle:20,1')->name('jobs.description.store');
+    Route::delete('/vagas/{job}/descricao', [PastedDescriptionController::class, 'destroy'])->name('jobs.description.destroy');
     Route::post('/vagas/{job}/curriculo/assistente', [ResumeAssistantController::class, 'chat'])->middleware('throttle:20,1')->name('jobs.resume.assistant');
     Route::post('/vagas/{job}/candidatura', [JobApplicationController::class, 'storeFromJob'])->name('jobs.apply');
 

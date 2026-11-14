@@ -33,7 +33,7 @@ class ResumeAssistantController extends Controller
         }
 
         try {
-            $result = $writer->assistant($data['html'], $data['message'], $job);
+            $result = $writer->assistant($data['html'], $data['message'], $job?->forUser($request->user()));
         } catch (\RuntimeException $e) {
             return response()->json(['reply' => $e->getMessage(), 'html' => null], 503);
         }

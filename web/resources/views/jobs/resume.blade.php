@@ -10,6 +10,9 @@
         @if (session('error'))
             <div class="mt-4 p-3 rounded-lg bg-amber-50 text-amber-800 text-sm print:hidden">{{ session('error') }}</div>
         @endif
+        @if (session('status'))
+            <div class="mt-4 p-3 rounded-lg bg-emerald-50 text-emerald-700 text-sm print:hidden">{{ session('status') }}</div>
+        @endif
 
         <div class="mt-4">
             <x-resume-editor :config="[
@@ -23,6 +26,37 @@
                 'recommendations' => $tailoring->recommendations ?? [],
                 'assistantUrl' => route('jobs.resume.assistant', $job),
             ]">
+                {{-- Descrição incompleta no site de origem: a pessoa cola o texto completo (vale só para ela) --}}
+                @if ($job->pastedByUser || $job->isShort())
+                    <div @class(['rounded-xl border p-5 text-sm', 'bg-emerald-50 border-emerald-200' => $job->pastedByUser, 'bg-amber-50 border-amber-200' => ! $job->pastedByUser])
+                         x-data="{ aberto: {{ $job->pastedByUser || $errors->has('description') ? 'false' : 'true' }} }">
+                        @if ($job->pastedByUser)
+                            <p class="font-semibold text-emerald-900">✅ Usando a descrição que você colou</p>
+                            <p class="mt-1 text-emerald-800">A compatibilidade e a IA consideram o texto completo da vaga.</p>
+                            <button type="button" @click="aberto = !aberto" class="mt-2 text-emerald-700 hover:underline" x-text="aberto ? 'Fechar' : 'Editar descrição'"></button>
+                        @else
+                            <p class="font-semibold text-amber-900">📋 A descrição desta vaga veio incompleta</p>
+                            <p class="mt-1 text-amber-800">O site de origem só mostra um resumo. Abra o <a href="{{ $job->url }}" target="_blank" rel="noopener nofollow" class="underline">anúncio original</a>, copie o texto completo e cole aqui: a comparação e a IA passam a usar tudo o que a vaga pede.</p>
+                        @endif
+                        <form x-show="aberto" x-cloak method="POST" action="{{ route('jobs.description.store', $job) }}" class="mt-3 space-y-2">
+                            @csrf @method('PUT')
+                            <textarea name="description" rows="7" required minlength="200" maxlength="30000" placeholder="Cole aqui a descrição completa da vaga…"
+                                      class="w-full rounded-lg border-gray-300 text-sm">{{ old('description', $job->pastedByUser ? $job->description : '') }}</textarea>
+                            <x-input-error :messages="$errors->get('description')" />
+                            <div class="flex items-center gap-3">
+                                <button class="px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Salvar descrição</button>
+                                <span class="text-xs text-gray-500">Só você vê este texto.</span>
+                            </div>
+                        </form>
+                        @if ($job->pastedByUser)
+                            <form method="POST" action="{{ route('jobs.description.destroy', $job) }}" class="mt-2">
+                                @csrf @method('DELETE')
+                                <button class="text-xs text-gray-500 hover:underline">Voltar a usar a descrição do site</button>
+                            </form>
+                        @endif
+                    </div>
+                @endif
+
                 {{-- Medidor reativo: atualiza a cada "Salvar" --}}
                 <div class="bg-white rounded-xl border border-gray-200 p-5">
                     <p class="text-xs uppercase tracking-wide text-gray-400">Compatibilidade com a vaga</p>
