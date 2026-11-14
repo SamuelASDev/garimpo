@@ -6,6 +6,7 @@ O site filtra o que não é TI, classifica e remove duplicadas.
 Variáveis de ambiente:
   INGEST_URL     ex.: https://seusite.com/api/ingest
   INGEST_TOKEN   mesmo valor do INGEST_TOKEN do .env do Laravel
+Fontes sempre ativas: Gupy, Programathor, Vagas.com e InfoJobs (páginas públicas).
   JOOBLE_API_KEY (opcional) chave grátis em jooble.org/api/about (100 chamadas/dia)
   JOOBLE_HOST    (opcional) país da chave: br.jooble.org (padrão), jooble.org (EUA)...
   ADZUNA_APP_ID / ADZUNA_APP_KEY   (opcional, pago: £8/mês) developer.adzuna.com
@@ -13,6 +14,7 @@ Variáveis de ambiente:
   DRY_RUN=1      só mostra quantas vagas achou, sem enviar
 """
 
+import html
 import json
 import os
 import re
@@ -31,10 +33,121 @@ USER_AGENT = "GarimpoBot/1.0 (+https://github.com/SamuelASDev/garimpo)"
 PAUSE = 2  # segundos entre requisições, para não sobrecarregar as fontes
 
 
+SHORT_TERMS = ["desenvolvedor", "suporte tecnico", "analista de sistemas", "analista de dados", "devops"]
+
+
 def get(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
     with urllib.request.urlopen(req, timeout=30) as resp:
-        return resp.read().decode("utf-8", errors="replace")
+        raw = resp.read()
+        charset = resp.headers.get_content_charset()
+    if not charset:  # alguns sites não informam: tenta utf-8 e cai para latin-1
+        try:
+            return raw.decode("utf-8")
+        except UnicodeDecodeError:
+            charset = "latin-1"
+    return raw.decode(charset, errors="replace")
+
+
+def text(fragment: str | None) -> str:
+    """Remove tags HTML, decodifica entidades e junta espaços."""
+    if not fragment:
+        return ""
+    return re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", fragment))).strip()
+
+
+def find(pattern: str, chunk: str) -> str:
+    m = re.search(pattern, chunk, re.S)
+    return text(m.group(1)) if m else ""
+
+
+def programathor() -> list[dict]:
+    """Programathor: só vagas de TI. Lista pública /jobs (3 primeiras páginas)."""
+    jobs = []
+    for page in range(1, 4):
+        try:
+            page_html = get(f"https://programathor.com.br/jobs?page={page}")
+        except Exception as exc:
+            print(f"[programathor] página {page}: {exc}", file=sys.stderr)
+            break
+        for chunk in page_html.split('<a href="/jobs/')[1:]:
+            if "Vencida" in chunk[:3000]:
+                continue
+            slug = chunk.split('"', 1)[0]
+            title = find(r"<h3[^>]*>(.*?)</h3>", chunk)
+            if not title:
+                continue
+            location = find(r"fa-map-marker-alt'></i>(.*?)</span>", chunk)
+            jobs.append({
+                "source": "programathor",
+                "url": f"https://programathor.com.br/jobs/{slug}",
+                "title": title,
+                "company": find(r"fa-briefcase'></i>(.*?)</span>", chunk) or None,
+                "location": location or None,
+                "remote": "remoto" in location.lower(),
+                "description": find(r"<div class='cell-list-content-icon'>(.*?)</div>", chunk),
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def vagas_com() -> list[dict]:
+    """Vagas.com.br: página pública de busca por termo."""
+    jobs = []
+    for term in SHORT_TERMS:
+        try:
+            page_html = get("https://www.vagas.com.br/vagas-de-" + term.replace(" ", "-"))
+        except Exception as exc:
+            print(f"[vagas.com] {term}: {exc}", file=sys.stderr)
+            continue
+        for chunk in page_html.split('<li class="vaga')[1:]:
+            link = re.search(r'title="([^"]+)"[^>]*href="(/vagas/v\d+/[^"]+)"', chunk)
+            if not link:
+                continue
+            date = re.search(r"(\d\d)/(\d\d)/(\d{4})", find(r'class="data-publicacao">(.*?)</span>', chunk))
+            location = find(r'bx-map"></i>(.*?)<div', chunk)
+            jobs.append({
+                "source": "vagas.com",
+                "url": "https://www.vagas.com.br" + link.group(2),
+                "title": text(link.group(1)),
+                "company": find(r'class="emprVaga">(.*?)</span>', chunk) or None,
+                "location": location or None,
+                "remote": "home office" in chunk.lower() or "remoto" in location.lower(),
+                "description": find(r'class="nivelVaga">(.*?)</span>', chunk) + ". " + find(r'class="detalhes">\s*<p>(.*?)</p>', chunk),
+                "posted_at": f"{date.group(3)}-{date.group(2)}-{date.group(1)}" if date else None,
+            })
+        time.sleep(PAUSE)
+    return jobs
+
+
+def infojobs() -> list[dict]:
+    """InfoJobs: página pública de busca por termo."""
+    jobs = []
+    for term in SHORT_TERMS:
+        try:
+            page_html = get("https://www.infojobs.com.br/empregos.aspx?palabra=" + urllib.parse.quote(term))
+        except Exception as exc:
+            print(f"[infojobs] {term}: {exc}", file=sys.stderr)
+            continue
+        for chunk in page_html.split("js_vacancyLoad js_cardLink")[1:]:
+            href = re.search(r'data-href="(/vaga-de-[^"]+\.aspx)"', chunk)
+            title = find(r'js_vacancyTitle">(.*?)</h2>', chunk)
+            if not (href and title):
+                continue
+            date = re.search(r'js_date" data-value="(\d{4})/(\d\d)/(\d\d)', chunk)
+            location = find(r'<div class="mb-8">(.*?)<span hidden', chunk)
+            jobs.append({
+                "source": "infojobs",
+                "url": "https://www.infojobs.com.br" + href.group(1),
+                "title": title,
+                "company": find(r'href="https://www\.infojobs\.com\.br/empresa-[^"]+">(.*?)<span', chunk) or None,
+                "location": location or None,
+                "remote": bool(re.search(r">\s*(Remoto|Home office)\s*<", chunk, re.I)),
+                "description": find(r'<div class="text-medium">(.*?)</div>', chunk),
+                "posted_at": f"{date.group(1)}-{date.group(2)}-{date.group(3)}" if date else None,
+            })
+        time.sleep(PAUSE)
+    return jobs
 
 
 def gupy() -> list[dict]:
@@ -174,7 +287,10 @@ def send(jobs: list[dict]) -> None:
 
 
 def main() -> None:
-    jobs = gupy() + jooble() + adzuna() + jobspy()
+    if not os.getenv("DRY_RUN") and not (os.getenv("INGEST_URL") and os.getenv("INGEST_TOKEN")):
+        print("INGEST_URL/INGEST_TOKEN não configurados: nada a fazer (configure os secrets após o deploy).")
+        return
+    jobs = gupy() + programathor() + vagas_com() + infojobs() + jooble() + adzuna() + jobspy()
     unique = list({j["url"]: j for j in jobs if j.get("url") and j.get("title")}.values())
     print(f"{len(unique)} vagas coletadas")
     if os.getenv("DRY_RUN") == "1":

@@ -36,9 +36,9 @@ return [
     ],
 
 
-    /* IAs com camada grátis (o site tenta na ordem: gemini, groq, openrouter) */
+    /* IAs com camada grátis (o site tenta na ordem: groq, gemini, openrouter) */
     "gemini" => ["key" => env("GEMINI_API_KEY"), "model" => env("GEMINI_MODEL", "gemini-flash-latest")],
-    "groq" => ["key" => env("GROQ_API_KEY"), "model" => env("GROQ_MODEL", "llama-3.3-70b-versatile")],
+    "groq" => ["key" => env("GROQ_API_KEY"), "model" => env("GROQ_MODEL", "openai/gpt-oss-120b")],
     "openrouter" => ["key" => env("OPENROUTER_API_KEY"), "model" => env("OPENROUTER_MODEL", "openrouter/free")],
 
     /* Token que o coletor Python usa para enviar vagas */

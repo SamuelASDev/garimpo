@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 /**
- * Gera o currículo adaptado usando provedores com camada grátis (Gemini, Groq, OpenRouter).
+ * Gera o currículo adaptado usando provedores com camada grátis (Groq, Gemini, OpenRouter).
  * Tenta cada provedor configurado em ordem até um responder.
  */
 class AiWriter
@@ -18,7 +18,7 @@ class AiWriter
     {
         $prompt = $this->prompt($resume, $job, $match);
 
-        foreach (['gemini', 'groq', 'openrouter'] as $provider) {
+        foreach (['groq', 'gemini', 'openrouter'] as $provider) {
             if (! config("services.$provider.key")) {
                 continue;
             }
