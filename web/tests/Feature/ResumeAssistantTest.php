@@ -8,6 +8,7 @@ use App\Mcp\Tools\ListResumes;
 use App\Models\JobPosting;
 use App\Models\ResumeTailoring;
 use App\Models\User;
+use App\Services\ResumeTemplate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -66,6 +67,20 @@ class ResumeAssistantTest extends TestCase
         $this->assertStringContainsString('linkedin.com/in/fulano', $content);
         $this->assertStringNotContainsString('ADICIONE: seu', $content);
         Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], 'são os dados REAIS da pessoa'));
+    }
+
+    public function test_header_keeps_what_exists_and_asks_only_for_what_is_missing(): void
+    {
+        $ai = '<h1>F</h1><p style="text-align: center">Corumbá - MS | <mark>ADICIONE: seu telefone</mark> | <mark>ADICIONE: seu email</mark></p>'
+            .'<p style="text-align: center"><mark>ADICIONE: seu LinkedIn</mark></p><h2>Objetivo</h2><p>x</p>';
+        $main = '<h1>F</h1><p style="text-align: center">Corumbá - MS | f@x.com</p><h2>Objetivo</h2>';
+
+        $html = ResumeTemplate::withHeaderFrom($ai, $main);
+
+        $this->assertStringContainsString('Corumbá - MS | f@x.com | <mark>ADICIONE: seu telefone</mark>', $html);
+        $this->assertStringContainsString('<mark>ADICIONE: seu LinkedIn</mark>', $html);
+        $this->assertStringNotContainsString('ADICIONE: seu email', $html); // o e-mail já existe
+        $this->assertStringContainsString('<h2>Objetivo</h2><p>x</p>', $html);
     }
 
     public function test_resumes_page_lists_main_and_job_resumes(): void

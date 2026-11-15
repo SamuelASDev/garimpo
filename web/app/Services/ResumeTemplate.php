@@ -142,8 +142,8 @@ class ResumeTemplate
 
     /**
      * Cabeçalho (cidade, telefone, e-mail, links) = os parágrafos entre o nome (h1) e a primeira seção (h2).
-     * O do currículo principal é a fonte da verdade: a IA nunca deve trocar esses dados por avisos.
-     * Troca, linha a linha, as do $html pelas do $source quando a do $source está completa (sem aviso amarelo).
+     * Regra: o que já está no currículo principal fica exatamente igual (a IA não tira nem inventa);
+     * o que falta continua aparecendo como aviso "ADICIONE: ..." para a pessoa completar.
      */
     public static function withHeaderFrom(string $html, ?string $source): string
     {
@@ -156,14 +156,68 @@ class ResumeTemplate
             return $html;
         }
 
-        $fixed = $mine;
-        foreach ($real as $i => $line) {
-            if (isset($fixed[$i]) && ! str_contains($line, '<mark') && ! str_contains($line, '[[')) {
-                $fixed[$i] = $line;
+        // Linhas do principal, mais os avisos da IA sobre o que o principal não tem (ex.: LinkedIn).
+        $realText = implode(' | ', $real);
+        $fixed = $real;
+        foreach ($mine as $i => $line) {
+            $missing = array_filter(self::headerItems($line), fn (string $item): bool => self::isNotice($item)
+                && ! self::mentions($realText, self::headerKind($item)));
+            if ($missing === []) {
+                continue;
+            }
+            $notices = implode(' | ', array_map(fn ($item) => '<mark>'.trim(strip_tags(str_replace(['[[', ']]'], '', $item))).'</mark>', $missing));
+            $fixed[$i] = isset($fixed[$i])
+                ? preg_replace('~</p>$~i', ' | '.$notices.'</p>', $fixed[$i])
+                : '<p style="text-align: center">'.$notices.'</p>';
+        }
+
+        $header = preg_match('~</h1>(.*?)(?=<h2|$)~is', $html, $m) ? $m[1] : '';
+        $rest = trim(str_replace($mine, '', $header)); // o que não for parágrafo de contato fica onde estava
+
+        return preg_replace_callback('~</h1>(.*?)(?=<h2|$)~is', fn () => '</h1>'.implode('', $fixed).$rest, $html, 1);
+    }
+
+    /** Itens de uma linha do cabeçalho ("Corumbá - MS | (67) 9... | e-mail"). @return list<string> */
+    private static function headerItems(string $line): array
+    {
+        $inner = preg_replace('~^<p\b[^>]*>|</p>$~i', '', trim($line));
+
+        return array_values(array_filter(array_map('trim', explode('|', $inner)), fn ($i) => $i !== ''));
+    }
+
+    private static function isNotice(string $item): bool
+    {
+        return str_contains($item, '<mark') || str_contains($item, '[[') || stripos($item, 'ADICIONE') !== false;
+    }
+
+    /** Que dado o item é (telefone, e-mail, linkedin, github, portfolio) ou null. */
+    private static function headerKind(string $item): ?string
+    {
+        $t = mb_strtolower(strip_tags($item));
+
+        return match (true) {
+            str_contains($t, 'linkedin') => 'linkedin',
+            str_contains($t, 'github') => 'github',
+            str_contains($t, 'portf') || str_contains($t, 'site') => 'portfolio',
+            str_contains($t, 'mail') || str_contains($t, '@') => 'email',
+            str_contains($t, 'telefone') || str_contains($t, 'celular') || str_contains($t, 'whats') || (bool) preg_match('~\d{4}[\s.-]?\d{4}~', $t) => 'telefone',
+            default => null,
+        };
+    }
+
+    /** O cabeçalho do principal já fala desse dado (preenchido ou com o próprio aviso)? */
+    private static function mentions(string $realHeader, ?string $kind): bool
+    {
+        if ($kind === null) {
+            return true; // aviso que não sabemos classificar: não duplica
+        }
+        foreach (self::headerItems(strip_tags($realHeader, '<mark>')) as $item) {
+            if (self::headerKind($item) === $kind) {
+                return true;
             }
         }
 
-        return preg_replace_callback('~</h1>(.*?)(?=<h2|$)~is', fn ($m) => '</h1>'.str_replace($mine, $fixed, $m[1]), $html, 1);
+        return false;
     }
 
     /** Lista os trechos marcados para o usuário completar. @return list<string> */
