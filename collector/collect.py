@@ -392,6 +392,9 @@ def jobspy() -> list[dict]:
 
 
 # Sites cuja página de busca só traz um resumo: a descrição completa fica na página da vaga.
+# Fontes que ficam só com o resumo com frequência (medido no banco): coletadas por último.
+LAST_SOURCES = {"vagas.com"}
+
 DETAIL_SOURCES = {"programathor", "vagas.com", "infojobs", "empregos.com", "randstad", "michaelpage"}
 
 
@@ -508,13 +511,15 @@ def main() -> None:
     print(f"{len(unique)} vagas coletadas")
     if os.getenv("DRY_RUN") == "1":
         return
-    # Primeiro os sites que já trazem a descrição completa (Gupy, LinkedIn, Indeed...). Depois os que só
-    # mostram resumo (vagas.com etc.): se a mesma vaga já entrou por um site melhor, ela fica com a versão
-    # boa e nem abrimos a página do site fraco.
-    send([j for j in unique if j["source"] not in DETAIL_SOURCES])
-    weak = [j for j in unique if j["source"] in DETAIL_SOURCES]
-    enrich(weak)
-    send(weak)
+    # A vagas.com vai por último: em 73% das vagas dela só sai o resumo (as outras fontes passam de 90%
+    # completas) e ela bloqueia com frequência. Se a mesma vaga já entrou por outro site, fica a versão
+    # completa e nem abrimos a página dela.
+    first = [j for j in unique if j["source"] not in LAST_SOURCES]
+    last = [j for j in unique if j["source"] in LAST_SOURCES]
+    enrich(first)
+    send(first)
+    enrich(last)
+    send(last)
 
 
 if __name__ == "__main__":
