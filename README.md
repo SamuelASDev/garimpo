@@ -298,8 +298,9 @@ php artisan garimpo:testar-email voce@exemplo.com
 
 ## Coleta automática (GitHub Actions)
 
-O workflow `.github/workflows/collect.yml` roda o coletor **a cada 4 horas**. Configure no repositório:
-**Settings → Secrets and variables → Actions**.
+O workflow `.github/workflows/collect.yml` roda o coletor. Ele é **disparado pelo cron do seu servidor a cada 4 horas**
+(01h, 05h, 09h, 13h, 17h e 21h de Brasília), porque o agendador gratuito do próprio GitHub atrasa e às vezes pula execuções.
+Configure no repositório: **Settings → Secrets and variables → Actions**.
 
 | Tipo | Nome | Valor |
 |---|---|---|
@@ -308,11 +309,17 @@ O workflow `.github/workflows/collect.yml` roda o coletor **a cada 4 horas**. Co
 | Variable | `USE_JOBSPY` | `1` para incluir LinkedIn e Indeed |
 | Secret (opcional) | `JOOBLE_API_KEY` | chave da Jooble |
 
-Para testar na hora: aba **Actions → Coletar vagas → Run workflow**. Enquanto os secrets não existem, o coletor
-termina sem fazer nada (não dá erro). Para mudar a frequência, edite a linha `cron` do workflow
-(acima de 4 em 4 horas não é recomendado: os sites podem bloquear).
+**Disparo pelo servidor** (precisa do cron `schedule:run` da seção de tarefas agendadas):
 
-> O GitHub pausa agendamentos de repositórios públicos sem commits há 60 dias; se acontecer, reative na aba Actions.
+1. GitHub → Settings → Developer settings → Personal access tokens → **Fine-grained tokens** → Generate new token.
+   *Repository access*: só o repositório do Garimpo. *Permissions → Actions*: **Read and write** (o resto sem acesso).
+2. No `.env` do servidor: `GITHUB_DISPATCH_TOKEN=github_pat_...` e `GITHUB_REPO=seu-usuario/garimpo`; depois `php artisan config:cache`.
+3. Teste: `php artisan garimpo:coletar` deve responder "Coleta disparada" e a execução aparece na aba Actions.
+
+Sem o token, nada é disparado automaticamente (rode na mão em **Actions → Coletar vagas → Run workflow**).
+Enquanto os secrets do GitHub não existem, o coletor termina sem fazer nada (não dá erro). Para mudar a frequência,
+edite o `cron` de `garimpo:coletar` em `web/routes/console.php` (acima de 4 em 4 horas não é recomendado: os sites podem bloquear).
+O token vence na data escolhida: renove antes e atualize o `.env`.
 
 ## Conectar a própria IA (MCP)
 

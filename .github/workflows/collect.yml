@@ -1,8 +1,8 @@
 name: Coletar vagas
 
+# Disparado pelo cron do servidor a cada 4h (php artisan garimpo:coletar): o agendador do GitHub atrasa e pula
+# execuções. Também dá para rodar na mão em Actions → Coletar vagas → Run workflow.
 on:
-  schedule:
-    - cron: "0 */4 * * *" # a cada 4 horas
   workflow_dispatch: {}
 
 jobs:

@@ -35,13 +35,15 @@ return [
         ],
     ],
 
-
     /* IAs com camada grátis (o site tenta na ordem: groq, gemini, openrouter) */
-    "gemini" => ["key" => env("GEMINI_API_KEY"), "model" => env("GEMINI_MODEL", "gemini-flash-latest")],
-    "groq" => ["key" => env("GROQ_API_KEY"), "model" => env("GROQ_MODEL", "openai/gpt-oss-120b")],
-    "openrouter" => ["key" => env("OPENROUTER_API_KEY"), "model" => env("OPENROUTER_MODEL", "openrouter/free")],
+    'gemini' => ['key' => env('GEMINI_API_KEY'), 'model' => env('GEMINI_MODEL', 'gemini-flash-latest')],
+    'groq' => ['key' => env('GROQ_API_KEY'), 'model' => env('GROQ_MODEL', 'openai/gpt-oss-120b')],
+    'openrouter' => ['key' => env('OPENROUTER_API_KEY'), 'model' => env('OPENROUTER_MODEL', 'openrouter/free')],
 
     /* Token que o coletor Python usa para enviar vagas */
-    "ingest" => ["token" => env("INGEST_TOKEN")],
+    'ingest' => ['token' => env('INGEST_TOKEN')],
+
+    // Dispara a coleta no GitHub Actions pelo cron do servidor (token fine-grained: só este repositório, Actions read/write).
+    'github' => ['token' => env('GITHUB_DISPATCH_TOKEN'), 'repo' => env('GITHUB_REPO', 'SamuelASDev/garimpo')],
 
 ];
