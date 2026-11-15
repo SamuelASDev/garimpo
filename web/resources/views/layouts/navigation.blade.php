@@ -8,11 +8,15 @@
                 </a>
                 <div class="hidden sm:flex gap-6 h-full">
                     <x-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">Vagas</x-nav-link>
+                    <x-nav-link :href="route('stats')" :active="request()->routeIs('stats')">Estatísticas</x-nav-link>
                     @auth
                         <x-nav-link :href="route('resumes.index')" :active="request()->routeIs('resume.*', 'resumes.*', 'jobs.resume')">Currículos</x-nav-link>
                         <x-nav-link :href="route('applications.index')" :active="request()->routeIs('applications.*')">Candidaturas</x-nav-link>
                         <x-nav-link :href="route('alerts.index')" :active="request()->routeIs('alerts.*')">Alertas</x-nav-link>
                         <x-nav-link :href="route('ai.show')" :active="request()->routeIs('ai.*')">Conectar IA</x-nav-link>
+                        @can('admin')
+                            <x-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">Admin</x-nav-link>
+                        @endcan
                     @endauth
                 </div>
             </div>
@@ -50,11 +54,15 @@
 
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden border-t border-gray-200 pb-3">
         <x-responsive-nav-link :href="route('jobs.index')" :active="request()->routeIs('jobs.*')">Vagas</x-responsive-nav-link>
+        <x-responsive-nav-link :href="route('stats')" :active="request()->routeIs('stats')">Estatísticas</x-responsive-nav-link>
         @auth
             <x-responsive-nav-link :href="route('resumes.index')" :active="request()->routeIs('resume.*', 'resumes.*', 'jobs.resume')">Currículos</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('applications.index')" :active="request()->routeIs('applications.*')">Candidaturas</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('alerts.index')" :active="request()->routeIs('alerts.*')">Alertas</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('ai.show')" :active="request()->routeIs('ai.*')">Conectar IA</x-responsive-nav-link>
+            @can('admin')
+                <x-responsive-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">Admin</x-responsive-nav-link>
+            @endcan
             <x-responsive-nav-link :href="route('profile.edit')">Minha conta</x-responsive-nav-link>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf

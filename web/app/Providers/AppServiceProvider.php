@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 use Laravel\Passport\Passport;
@@ -21,6 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Painel de administração (/admin): só quem tem is_admin (promova com php artisan garimpo:admin email).
+        Gate::define('admin', fn ($user): bool => (bool) $user->is_admin);
+
         // Senha forte em produção: 10+ caracteres, letras e números, e não pode estar em vazamentos conhecidos
         // (consulta anônima ao Have I Been Pwned: só os 5 primeiros caracteres do hash saem do servidor).
         Password::defaults(fn () => $this->app->isProduction()

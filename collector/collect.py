@@ -364,10 +364,14 @@ def jobspy() -> list[dict]:
     from jobspy import scrape_jobs  # pip install python-jobspy
 
     jobs = []
-    for term in ["desenvolvedor", "suporte técnico ti", "analista de dados"]:
+    # Foco em desenvolvimento, mas cobrindo as outras áreas de TI. hours_old=24 traz só as mais recentes
+    # (a coleta roda a cada 4h, então nada se perde).
+    terms = ["desenvolvedor", "programador", "desenvolvedor front-end", "desenvolvedor back-end", "desenvolvedor full stack",
+             "analista de sistemas", "analista de TI", "suporte técnico TI", "analista de dados", "DevOps", "analista de QA"]
+    for term in terms:
         try:
             df = scrape_jobs(site_name=["linkedin", "indeed"], search_term=term, location="Brazil",
-                             country_indeed="brazil", results_wanted=30, hours_old=48,
+                             country_indeed="brazil", results_wanted=25, hours_old=24,
                              linkedin_fetch_description=True)
         except Exception as exc:
             print(f"[jobspy] {term}: {exc}", file=sys.stderr)

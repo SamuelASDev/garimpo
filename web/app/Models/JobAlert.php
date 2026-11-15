@@ -33,6 +33,8 @@ class JobAlert extends Model
     {
         return JobPosting::filter($this->filters ?? [])
             ->where('created_at', '>', $this->last_sent_at ?? $this->created_at)
+            // Só vagas publicadas nas últimas 24h: anúncio antigo que entrou agora não vira alerta.
+            ->where('posted_at', '>=', now()->subDay())
             ->latest('posted_at');
     }
 

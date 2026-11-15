@@ -21,7 +21,7 @@ class JobAlertsTest extends TestCase
     {
         $this->n++;
 
-        return JobPosting::create(['source' => 'gupy', 'url' => "https://x.test/{$this->n}", 'fingerprint' => "f{$this->n}", 'title' => "Vaga {$this->n}", ...$attrs]);
+        return JobPosting::create(['source' => 'gupy', 'url' => "https://x.test/{$this->n}", 'fingerprint' => "f{$this->n}", 'title' => "Vaga {$this->n}", 'posted_at' => now(), ...$attrs]);
     }
 
     public function test_user_creates_alert_from_list_filters(): void

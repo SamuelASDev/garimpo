@@ -106,6 +106,11 @@ class JobClassifier
 
     public const SENIORITIES = ['estagio', 'junior', 'pleno', 'senior', 'especialista'];
 
+    /** Nomes legíveis de senioridades e áreas. */
+    public const LABELS = ['estagio' => 'Estágio / Trainee', 'junior' => 'Júnior', 'pleno' => 'Pleno', 'senior' => 'Sênior', 'especialista' => 'Especialista',
+        'dev' => 'Desenvolvimento', 'suporte' => 'Suporte', 'infra' => 'Infra/DevOps', 'dados' => 'Dados', 'qa' => 'QA/Testes',
+        'seguranca' => 'Segurança', 'mobile' => 'Mobile', 'design' => 'UX/UI', 'gestao' => 'Gestão/Produto'];
+
     /** @return array{seniority: ?string, area: ?string, techs: list<string>, skills: list<string>, soft_skills: list<string>} */
     public function classify(string $title, string $description = ''): array
     {

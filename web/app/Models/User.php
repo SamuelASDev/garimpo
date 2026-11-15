@@ -2,15 +2,16 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Laravel\Passport\Contracts\OAuthenticatable;
 use Laravel\Passport\HasApiTokens;
 
@@ -32,10 +33,10 @@ class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable
     {
         static::deleting(function (User $user): void {
             $tokenIds = $user->tokens()->pluck('id');
-            \Illuminate\Support\Facades\DB::table('oauth_refresh_tokens')->whereIn('access_token_id', $tokenIds)->delete();
+            DB::table('oauth_refresh_tokens')->whereIn('access_token_id', $tokenIds)->delete();
             $user->tokens()->delete();
-            \Illuminate\Support\Facades\DB::table('oauth_auth_codes')->where('user_id', $user->id)->delete();
-            \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $user->id)->delete();
+            DB::table('oauth_auth_codes')->where('user_id', $user->id)->delete();
+            DB::table('sessions')->where('user_id', $user->id)->delete();
         });
     }
 
@@ -66,6 +67,7 @@ class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable
             'password' => 'hashed',
             'terms_accepted_at' => 'datetime',
             'ai_consent_at' => 'datetime',
+            'is_admin' => 'boolean',
         ];
     }
 }

@@ -43,7 +43,7 @@ class JobIngestTest extends TestCase
             $this->job(['url' => 'https://url&quebrada.gupy.io/job/3', 'title' => 'Dev Java']),
         ]], ['Authorization' => 'Bearer segredo']);
 
-        $response->assertOk()->assertExactJson(['created' => 1, 'updated' => 0, 'duplicated' => 1, 'ignored' => 1, 'invalid' => 1]);
+        $response->assertOk()->assertExactJson(['created' => 1, 'updated' => 0, 'duplicated' => 1, 'ignored' => 1, 'old' => 0, 'invalid' => 1]);
 
         $job = JobPosting::sole();
         $this->assertSame('pleno', $job->seniority);

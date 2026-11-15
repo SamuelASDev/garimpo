@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\AiConnectionController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\JobAlertController;
@@ -11,11 +12,13 @@ use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumeAssistantController;
 use App\Http\Controllers\ResumeController;
+use App\Http\Controllers\StatsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [JobController::class, 'index'])->name('jobs.index');
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
 Route::get('/privacidade', [LegalController::class, 'privacy'])->name('legal.privacy');
+Route::get('/estatisticas', StatsController::class)->name('stats');
 Route::get('/termos', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('/alertas/parar/{user}', [JobAlertController::class, 'unsubscribe'])->middleware('signed')->name('alerts.unsubscribe');
 
@@ -59,6 +62,18 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'can:admin'])->prefix('admin')->name('admin.')->controller(AdminController::class)->group(function () {
+    Route::get('/', 'index')->name('index');
+    Route::get('/vagas', 'jobs')->name('jobs');
+    Route::delete('/vagas', 'destroyAllJobs')->name('jobs.destroyAll');
+    Route::get('/vagas/{job}', 'editJob')->name('jobs.edit');
+    Route::put('/vagas/{job}', 'updateJob')->name('jobs.update');
+    Route::delete('/vagas/{job}', 'destroyJob')->name('jobs.destroy');
+    Route::get('/usuarios', 'users')->name('users');
+    Route::patch('/usuarios/{user}/admin', 'toggleAdmin')->name('users.admin');
+    Route::delete('/usuarios/{user}', 'destroyUser')->name('users.destroy');
 });
 
 require __DIR__.'/auth.php';

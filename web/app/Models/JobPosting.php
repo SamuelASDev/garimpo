@@ -3,8 +3,10 @@
 namespace App\Models;
 
 use App\Services\JobClassifier;
+use App\Services\JobIngestor;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class JobPosting extends Model
 {
@@ -16,7 +18,7 @@ class JobPosting extends Model
     /** O site de origem só trouxe um resumo (a pessoa pode colar a descrição completa). */
     public function isShort(): bool
     {
-        return mb_strlen((string) $this->getOriginal('description')) < \App\Services\JobIngestor::SHORT_DESCRIPTION;
+        return mb_strlen((string) $this->getOriginal('description')) < JobIngestor::SHORT_DESCRIPTION;
     }
 
     /**
@@ -39,6 +41,16 @@ class JobPosting extends Model
         $copy->pastedByUser = true;
 
         return $copy;
+    }
+
+    public function tailorings(): HasMany
+    {
+        return $this->hasMany(ResumeTailoring::class);
+    }
+
+    public function pastedDescriptions(): HasMany
+    {
+        return $this->hasMany(PastedDescription::class);
     }
 
     protected function casts(): array
