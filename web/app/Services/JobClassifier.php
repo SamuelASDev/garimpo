@@ -32,7 +32,28 @@ class JobClassifier
         'Selenium' => '\bselenium\b', 'Cypress' => '\bcypress\b', 'Jest' => '\bjest\b', 'PHPUnit' => '\bphpunit\b',
         'Scrum' => '\bscrum\b', 'Kanban' => '\bkanban\b', 'ITIL' => '\bitil\b', 'Active Directory' => '\bactive directory\b',
         'Redes' => '(redes de computadores|tcp/ip|\bcisco\b|\bccna\b)', 'Figma' => '\bfigma\b', 'SAP' => '\bsap\b',
-        'Salesforce' => '\bsalesforce\b', 'Inglês' => '\b(ingl(ê|e)s|english)\b', 'Windows' => '\bwindows\b(?! ?server)',
+        'Salesforce' => '\bsalesforce\b', 'Windows' => '\bwindows\b(?! ?server)',
+    ];
+
+    /**
+     * Stack = o ecossistema principal da vaga (uma só por vaga), diferente da lista de tecnologias (várias por vaga).
+     * A ordem desempata: o que aparece primeiro ganha.
+     *
+     * @var array<string, list<string>> stack => tecnologias de TECHS que indicam essa stack
+     */
+    public const STACKS = [
+        'PHP' => ['PHP', 'Laravel', 'Symfony', 'WordPress'],
+        'Python' => ['Python', 'Django', 'Flask', 'FastAPI'],
+        'Java' => ['Java', 'Spring'],
+        '.NET / C#' => ['C#', '.NET'],
+        'Node.js' => ['Node.js', 'NestJS'],
+        'Mobile' => ['React Native', 'Flutter', 'Dart', 'Swift', 'Kotlin', 'Android', 'iOS'],
+        'Front-end (React, Angular, Vue)' => ['React', 'Angular', 'Vue', 'Next.js', 'Svelte'],
+        'Go' => ['Go'],
+        'Ruby' => ['Ruby', 'Rails'],
+        'C++' => ['C++'],
+        'Rust' => ['Rust'],
+        'Elixir' => ['Elixir'],
     ];
 
     /**
@@ -74,6 +95,8 @@ class JobClassifier
         'Ensino técnico' => 'ensino (m(é|e)dio ou )?t(é|e)cnico|curso t(é|e)cnico|t(é|e)cnico em (inform(á|a)tica|redes|eletr(ô|o)nica)',
         'Ensino superior em TI' => '(superior|gradua(ç|c)(ã|a)o|bacharelado|tecn(ó|o)logo)[^.\n]{0,40}(computa(ç|c)(ã|a)o|sistemas|\bti\b|tecnologia|software|inform(á|a)tica)',
         'CNH' => '\bcnh\b|carteira (nacional )?de habilita(ç|c)(ã|a)o',
+        // Idiomas
+        'Inglês' => '\b(ingl(ê|e)s|english)\b', 'Espanhol' => '\b(espanhol|spanish)\b',
     ];
 
     /** @var array<string, string> Competências comportamentais (soft skills). */
@@ -154,6 +177,28 @@ class JobClassifier
         return $hint === 'remoto' ? 'remoto' : null;
     }
 
+    /**
+     * A stack principal da vaga: primeiro pelo título (o que o cargo diz), depois pela stack com mais
+     * tecnologias citadas. null quando a vaga não é de uma linguagem (suporte, infra, dados genérico...).
+     *
+     * @param  list<string>  $techs
+     */
+    public static function stackOf(string $title, array $techs): ?string
+    {
+        $inTitle = (new self)->techs($title);
+        foreach ([$inTitle, $techs] as $found) {
+            if (in_array('React Native', $found, true)) {
+                $found = array_diff($found, ['React']); // "React Native" também casa com "React"
+            }
+            $scores = array_map(fn (array $stackTechs): int => count(array_intersect($stackTechs, $found)), self::STACKS);
+            if (max($scores) > 0) {
+                return array_search(max($scores), $scores, true);
+            }
+        }
+
+        return null;
+    }
+
     /** Competências técnicas encontradas no texto. @return list<string> */
     public function competencies(string $text): array
     {
@@ -178,7 +223,7 @@ class JobClassifier
         $title = Str::lower($title);
 
         return $this->area($title) !== null
-            || array_diff($this->techs($title), ['Inglês', 'Excel', 'Scrum', 'Kanban', 'SAP']) !== [];
+            || array_diff($this->techs($title), ['Excel', 'Scrum', 'Kanban', 'SAP']) !== [];
     }
 
     /** @return list<string> */

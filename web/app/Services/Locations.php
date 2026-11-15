@@ -48,7 +48,7 @@ class Locations
     /** @return array{city: ?string, city_key: ?string, state: ?string} */
     public static function parse(?string $location): array
     {
-        $text = preg_replace(['~\(.*?\)~', '~^(greater|grande)\s+~i', '~\s+e\s+regi(ã|a)o.*$~iu', '~regi(ã|a)o metropolitana de\s+~iu', '~\s+metropolitan area$~i'], '', (string) $location);
+        $text = preg_replace(['~\(.*?\)~', '~^(greater|grande)\s+~i', '~\s+e\s+regi(ã|a)o.*$~iu', '~regi(ã|a)o metropolitana de\s+~iu', '~\s+(metropolitan\s+)?area\b~i'], '', (string) $location);
         $parts = array_values(array_filter(
             array_map('trim', preg_split('~\s*[,/|]\s*|\s+-\s+~u', $text)),
             fn (string $p): bool => $p !== '' && ! preg_match('~^(brasil|brazil)$~i', $p),

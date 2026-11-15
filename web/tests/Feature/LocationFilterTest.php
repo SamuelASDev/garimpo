@@ -14,7 +14,7 @@ class LocationFilterTest extends TestCase
 
     public function test_each_site_format_becomes_the_same_city_and_state(): void
     {
-        foreach (['São Paulo, São Paulo, Brazil', 'São Paulo - SP', 'Sao Paulo / SP', 'São Paulo, SP, Brazil', 'São Paulo (Híbrido)'] as $location) {
+        foreach (['São Paulo, São Paulo, Brazil', 'São Paulo - SP', 'Sao Paulo / SP', 'São Paulo, SP, Brazil', 'São Paulo (Híbrido)', 'São Paulo Area', 'São Paulo Metropolitan Area, Brazil'] as $location) {
             $this->assertSame(['city_key' => 'sao paulo', 'state' => 'SP'], array_intersect_key(Locations::parse($location), ['city_key' => 1, 'state' => 1]), $location);
         }
         $this->assertSame(['city' => null, 'city_key' => null, 'state' => null], Locations::parse('Remoto, Brazil'));

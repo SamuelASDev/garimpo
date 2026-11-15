@@ -65,6 +65,12 @@
             </div>
 
             <div class="mt-6 grid md:grid-cols-2 gap-6">
+                <div>
+                    @include('stats._donut', ['title' => 'Stacks: o ecossistema principal de cada vaga', 'data' => $stacks])
+                    <p class="mt-2 text-xs text-gray-500">Cada vaga conta uma vez só, pela stack principal (título primeiro, depois as tecnologias citadas).
+                        {{ $withoutStack }} vagas sem uma linguagem principal (suporte, infra, dados...) ficam de fora.</p>
+                </div>
+                @include('stats._bars', ['title' => 'Stacks com mais vagas', 'data' => $stacks, 'color' => '#4f46e5'])
                 @include('stats._bars', ['title' => 'Tecnologias mais pedidas', 'data' => $techs, 'color' => '#059669', 'link' => 'tech'])
                 @include('stats._bars', ['title' => 'Competências mais pedidas', 'data' => $skills, 'color' => '#0284c7'])
                 @include('stats._donut', ['title' => 'Senioridade', 'data' => $seniorities])

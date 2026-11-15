@@ -6,6 +6,7 @@ use App\Models\JobAlert;
 use App\Models\JobPosting;
 use App\Models\ResumeTailoring;
 use App\Models\User;
+use App\Services\JobClassifier;
 use App\Services\JobIngestor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -118,10 +119,22 @@ class AdminAndFreshnessTest extends TestCase
         $this->assertTrue($admin->fresh()->is_admin);
     }
 
+    public function test_english_is_a_competency_and_each_job_has_one_main_stack(): void
+    {
+        $found = app(JobClassifier::class)->classify('Desenvolvedor PHP', 'Laravel, MySQL e inglês avançado.');
+        $this->assertNotContains('Inglês', $found['techs']);
+        $this->assertContains('Inglês', $found['skills']);
+
+        $this->assertSame('PHP', JobClassifier::stackOf('Desenvolvedor PHP Pleno', ['PHP', 'JavaScript', 'React']));
+        $this->assertSame('Mobile', JobClassifier::stackOf('Dev Mobile', ['React Native', 'React']));
+        $this->assertSame('Node.js', JobClassifier::stackOf('Dev Back-end', ['Node.js', 'NestJS', 'AWS']));
+        $this->assertNull(JobClassifier::stackOf('Analista de Suporte', ['Windows', 'Linux']));
+    }
+
     public function test_stats_page_shows_charts(): void
     {
         JobPosting::create(['source' => 'gupy', 'url' => 'https://x.test/1', 'fingerprint' => 'a', 'title' => 'Dev', 'techs' => ['PHP'], 'seniority' => 'junior', 'posted_at' => now()]);
 
-        $this->get(route('stats'))->assertOk()->assertSee('Tecnologias mais pedidas')->assertSee('PHP')->assertSee('Júnior');
+        $this->get(route('stats'))->assertOk()->assertSee('Stacks com mais vagas')->assertSee('Tecnologias mais pedidas')->assertSee('PHP')->assertSee('Júnior');
     }
 }

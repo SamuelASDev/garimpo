@@ -22,7 +22,7 @@ class StatsController extends Controller
 
         $jobs = JobPosting::filter($filters)
             ->where('posted_at', '>=', now()->subDays($days)->startOfDay())
-            ->get(['techs', 'skills', 'soft_skills', 'seniority', 'area', 'source', 'work_mode', 'company', 'posted_at']);
+            ->get(['title', 'techs', 'skills', 'soft_skills', 'seniority', 'area', 'source', 'work_mode', 'company', 'posted_at']);
 
         $labels = JobClassifier::LABELS + ['nao_informada' => 'Não informada', 'outras' => 'Outras'];
         $count = fn (Collection $values, int $limit = 15): array => $values->filter()->countBy()->sortDesc()->take($limit)->all();
@@ -39,6 +39,8 @@ class StatsController extends Controller
             'filters' => $filters,
             'perDay' => $perDay->all(),
             'techs' => $count($jobs->pluck('techs')->flatten()),
+            'stacks' => $count($jobs->map(fn ($j) => JobClassifier::stackOf((string) $j->title, $j->techs ?? []))),
+            'withoutStack' => $jobs->filter(fn ($j) => JobClassifier::stackOf((string) $j->title, $j->techs ?? []) === null)->count(),
             'skills' => $count($jobs->pluck('skills')->flatten(), 12),
             'softSkills' => $count($jobs->pluck('soft_skills')->flatten(), 8),
             'seniorities' => $label($count($jobs->pluck('seniority')->map(fn ($s) => $s ?: 'nao_informada'))),
