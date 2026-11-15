@@ -32,7 +32,7 @@
         <p>@yield('message')</p>
         <div class="actions">
             @section('actions')
-                <a class="primary" href="/">Ver as vagas</a>
+                <a class="primary" href="/vagas">Ver as vagas</a>
                 <button class="secondary" type="button" onclick="history.back()">Voltar</button>
             @show
         </div>

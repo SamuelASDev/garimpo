@@ -131,6 +131,16 @@ class AdminAndFreshnessTest extends TestCase
         $this->assertNull(JobClassifier::stackOf('Analista de Suporte', ['Windows', 'Linux']));
     }
 
+    public function test_home_explains_the_site_and_jobs_and_stats_stay_public(): void
+    {
+        JobPosting::create(['source' => 'gupy', 'url' => 'https://x.test/h', 'fingerprint' => 'h', 'title' => 'Desenvolvedor PHP', 'techs' => ['PHP'], 'posted_at' => now()]);
+
+        $this->get('/')->assertOk()->assertSee('Como funciona')->assertSee('O que é ATS')->assertSee('Desenvolvedor PHP');
+        $this->get(route('jobs.index'))->assertOk()->assertSee('Desenvolvedor PHP'); // sem conta
+        $this->get(route('stats'))->assertOk();                                       // sem conta
+        $this->get('/?tech=PHP')->assertRedirect(route('jobs.index', ['tech' => 'PHP'])); // links antigos
+    }
+
     public function test_stats_page_shows_charts(): void
     {
         JobPosting::create(['source' => 'gupy', 'url' => 'https://x.test/1', 'fingerprint' => 'a', 'title' => 'Dev', 'techs' => ['PHP'], 'seniority' => 'junior', 'posted_at' => now()]);

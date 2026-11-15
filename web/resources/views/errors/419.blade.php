@@ -6,5 +6,5 @@
 @section('message', 'Por segurança, a página ficou muito tempo aberta sem uso. Recarregue e tente de novo; o que você salvou antes continua lá.')
 @section('actions')
     <button class="primary" type="button" onclick="location.reload()">Recarregar</button>
-    <a class="secondary" href="/">Ver as vagas</a>
+    <a class="secondary" href="/vagas">Ver as vagas</a>
 @endsection

@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\AiConnectionController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\ExportController;
+use App\Http\Controllers\HomeController;
 use App\Http\Controllers\JobAlertController;
 use App\Http\Controllers\JobApplicationController;
 use App\Http\Controllers\JobController;
@@ -16,7 +17,8 @@ use App\Http\Controllers\ResumeController;
 use App\Http\Controllers\StatsController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [JobController::class, 'index'])->name('jobs.index');
+Route::get('/', HomeController::class)->name('home');
+Route::get('/vagas', [JobController::class, 'index'])->name('jobs.index');
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
 Route::get('/privacidade', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/estatisticas', StatsController::class)->name('stats');

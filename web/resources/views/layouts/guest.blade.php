@@ -20,7 +20,7 @@
                 <div class="absolute -right-24 -top-24 w-80 h-80 rounded-full bg-amber-400/10 blur-2xl" aria-hidden="true"></div>
                 <div class="absolute -left-16 bottom-0 w-72 h-72 rounded-full bg-emerald-400/10 blur-2xl" aria-hidden="true"></div>
 
-                <a href="{{ route('jobs.index') }}" class="relative flex items-center gap-3 w-fit">
+                <a href="{{ route('home') }}" class="relative flex items-center gap-3 w-fit">
                     <x-application-logo class="w-10 h-10 ring-1 ring-white/20 rounded-[14px]" />
                     <span class="text-xl font-bold tracking-tight">{{ config('app.name') }}</span>
                 </a>

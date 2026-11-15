@@ -2,7 +2,7 @@
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex items-center gap-8">
-                <a href="{{ route('jobs.index') }}" class="flex items-center gap-2 font-bold text-gray-900">
+                <a href="{{ route('home') }}" class="flex items-center gap-2 font-bold text-gray-900">
                     <x-application-logo class="w-8 h-8" />
                     {{ config('app.name') }}
                 </a>
