@@ -30,7 +30,7 @@ class SaveTailoredResume extends Tool
         ResumeTailoring::updateOrCreate(
             ['user_id' => $request->user()->id, 'job_posting_id' => $job->id],
             [
-                'content' => $template->render($input['data']),
+                'content' => ResumeTemplate::withHeaderFrom($template->render($input['data']), $request->user()->resume?->html),
                 'generated_by' => 'mcp',
                 'recommendations' => ResumeTemplate::recommendations($input['data']['recomendacoes'] ?? []),
             ],

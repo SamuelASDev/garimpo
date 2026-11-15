@@ -140,6 +140,32 @@ class ResumeTemplate
         }, $html);
     }
 
+    /**
+     * Cabeçalho (cidade, telefone, e-mail, links) = os parágrafos entre o nome (h1) e a primeira seção (h2).
+     * O do currículo principal é a fonte da verdade: a IA nunca deve trocar esses dados por avisos.
+     * Troca, linha a linha, as do $html pelas do $source quando a do $source está completa (sem aviso amarelo).
+     */
+    public static function withHeaderFrom(string $html, ?string $source): string
+    {
+        $lines = fn (string $doc): array => preg_match('~</h1>(.*?)(?=<h2|$)~is', $doc, $m)
+            ? (preg_match_all('~<p\b[^>]*>.*?</p>~is', $m[1], $p) ? $p[0] : [])
+            : [];
+        $mine = $lines($html);
+        $real = $source ? $lines($source) : [];
+        if ($mine === [] || $real === []) {
+            return $html;
+        }
+
+        $fixed = $mine;
+        foreach ($real as $i => $line) {
+            if (isset($fixed[$i]) && ! str_contains($line, '<mark') && ! str_contains($line, '[[')) {
+                $fixed[$i] = $line;
+            }
+        }
+
+        return preg_replace_callback('~</h1>(.*?)(?=<h2|$)~is', fn ($m) => '</h1>'.str_replace($mine, $fixed, $m[1]), $html, 1);
+    }
+
     /** Lista os trechos marcados para o usuário completar. @return list<string> */
     public static function placeholders(string $html): array
     {

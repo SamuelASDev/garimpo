@@ -246,6 +246,13 @@ class AiWriter
         // LGPD: telefone, e-mail, CPF e links de perfil não saem do Garimpo; voltam só na resposta.
         $masker = new ContactMasker;
         $prompt = $masker->mask($prompt);
+        if ($prompt !== $masker->unmask($prompt)) {
+            // Sem isso a IA confunde os marcadores com dado faltando e escreve "[[ADICIONE: seu telefone]]".
+            $prompt .= '
+
+IMPORTANTE: [EMAIL_1], [TELEFONE_2], [PERFIL_3] e marcadores parecidos são os dados REAIS da pessoa,'
+                .' ocultados por privacidade. Copie-os exatamente como estão, no mesmo lugar; nunca os troque por [[ADICIONE: ...]].';
+        }
 
         // Gemini por último: a camada grátis do Google pode usar o conteúdo para treinar modelos.
         foreach (['groq', 'openrouter', 'gemini'] as $provider) {

@@ -50,6 +50,24 @@ class ResumeAssistantTest extends TestCase
             && str_contains($request['messages'][0]['content'], 'Revise também a ESCRITA'));
     }
 
+    public function test_tailoring_keeps_the_real_contact_header(): void
+    {
+        $user = User::factory()->create();
+        $user->resume()->create(['html' => '<h1 style="text-align: center">Fulano</h1><p style="text-align: center">Corumbá - MS | (67) 99954-7095 | fulano@exemplo.com</p><p style="text-align: center">linkedin.com/in/fulano | github.com/fulano</p><h2>Objetivo</h2><p>Dev</p>']);
+        $job = JobPosting::create(['source' => 'gupy', 'url' => 'https://x.test/9', 'fingerprint' => 'z', 'title' => 'Analista de Suporte', 'techs' => []]);
+        // A IA confunde os marcadores de privacidade com dado faltando:
+        $this->fakeAi(['nome' => 'Fulano', 'contato' => 'Corumbá - MS | [[ADICIONE: seu telefone]] | [[ADICIONE: seu email]]',
+            'links' => '[[ADICIONE: seu LinkedIn]]', 'objetivo' => ['cargo' => 'Analista de Suporte Júnior', 'texto' => 'Busco...']]);
+
+        $this->actingAs($user)->post(route('jobs.tailor', $job))->assertRedirect();
+
+        $content = ResumeTailoring::sole()->content;
+        $this->assertStringContainsString('(67) 99954-7095 | fulano@exemplo.com', $content);
+        $this->assertStringContainsString('linkedin.com/in/fulano', $content);
+        $this->assertStringNotContainsString('ADICIONE: seu', $content);
+        Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], 'são os dados REAIS da pessoa'));
+    }
+
     public function test_resumes_page_lists_main_and_job_resumes(): void
     {
         [$user] = $this->userWithTailoring();

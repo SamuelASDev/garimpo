@@ -74,7 +74,7 @@ class JobController extends Controller
             }
             $result = $writer->tailor($user->resume, $job, $matcher->match($user->resume, $job));
             RateLimiter::hit($key, 86400);
-            $html = $template->render($result['data']);
+            $html = ResumeTemplate::withHeaderFrom($template->render($result['data']), $user->resume->html);
             $provider = $result['provider'];
             $recommendations = ResumeTemplate::recommendations($result['data']['recomendacoes'] ?? []);
         } catch (\RuntimeException $e) {
