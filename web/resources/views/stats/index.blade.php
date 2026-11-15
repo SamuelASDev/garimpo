@@ -32,9 +32,13 @@
                     <option @selected(($filters['tech'] ?? '') === $t)>{{ $t }}</option>
                 @endforeach
             </select>
-            <label class="flex items-center gap-2 px-2">
-                <input type="checkbox" name="remote" value="1" @checked($filters['remote'] ?? false) class="rounded border-gray-300 text-emerald-600"> Só remoto
-            </label>
+            <select name="mode" class="rounded-lg border-gray-300 text-sm">
+                <option value="">Toda modalidade</option>
+                @foreach (\App\Services\JobClassifier::WORK_MODES as $value => $text)
+                    <option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $text }}</option>
+                @endforeach
+            </select>
+            <input name="city" value="{{ $filters['city'] ?? '' }}" placeholder="Cidade ou estado" class="rounded-lg border-gray-300 text-sm">
             <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Aplicar</button>
         </form>
 
@@ -65,7 +69,7 @@
                 @include('stats._bars', ['title' => 'Competências mais pedidas', 'data' => $skills, 'color' => '#0284c7'])
                 @include('stats._donut', ['title' => 'Senioridade', 'data' => $seniorities])
                 @include('stats._donut', ['title' => 'Área', 'data' => $areas])
-                @include('stats._donut', ['title' => 'Remoto x presencial', 'data' => $remote])
+                @include('stats._donut', ['title' => 'Modalidade', 'data' => $modes])
                 @include('stats._donut', ['title' => 'Sites de origem', 'data' => $sources])
                 @include('stats._bars', ['title' => 'Empresas que mais contratam', 'data' => $companies, 'color' => '#7c3aed'])
                 @include('stats._bars', ['title' => 'Comportamentais mais citadas', 'data' => $softSkills, 'color' => '#d97706'])

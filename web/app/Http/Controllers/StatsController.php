@@ -18,11 +18,11 @@ class StatsController extends Controller
     public function __invoke(Request $request): View
     {
         $days = array_key_exists((int) $request->days, self::PERIODS) ? (int) $request->days : 30;
-        $filters = $request->only(['seniority', 'area', 'tech', 'remote']);
+        $filters = $request->only(['seniority', 'area', 'tech', 'remote', 'mode', 'city']);
 
         $jobs = JobPosting::filter($filters)
             ->where('posted_at', '>=', now()->subDays($days)->startOfDay())
-            ->get(['techs', 'skills', 'soft_skills', 'seniority', 'area', 'source', 'remote', 'company', 'posted_at']);
+            ->get(['techs', 'skills', 'soft_skills', 'seniority', 'area', 'source', 'work_mode', 'company', 'posted_at']);
 
         $labels = JobClassifier::LABELS + ['nao_informada' => 'Não informada', 'outras' => 'Outras'];
         $count = fn (Collection $values, int $limit = 15): array => $values->filter()->countBy()->sortDesc()->take($limit)->all();
@@ -45,7 +45,7 @@ class StatsController extends Controller
             'areas' => $label($count($jobs->pluck('area')->map(fn ($a) => $a ?: 'outras'))),
             'sources' => $count($jobs->pluck('source')),
             'companies' => $count($jobs->pluck('company'), 10),
-            'remote' => ['Remoto' => $jobs->where('remote', true)->count(), 'Presencial / híbrido' => $jobs->where('remote', false)->count()],
+            'modes' => $jobs->countBy(fn ($j) => JobClassifier::WORK_MODES[$j->work_mode] ?? 'Não informada')->sortDesc()->all(),
             'options' => ['areas' => array_keys(JobClassifier::AREAS), 'seniorities' => JobClassifier::SENIORITIES, 'techs' => array_keys(JobClassifier::TECHS)],
         ]);
     }

@@ -52,6 +52,8 @@ class JobAlert extends Model
             $labels[$f['area'] ?? ''] ?? null,
             ! empty($f['tech']) ? implode(' + ', (array) $f['tech']) : null,
             ! empty($f['remote']) ? 'Remoto' : null,
+            JobClassifier::WORK_MODES[$f['mode'] ?? ''] ?? null,
+            ! empty($f['city']) ? 'em '.$f['city'] : null,
         ]);
 
         return $parts ? implode(' · ', $parts) : 'Todas as vagas de TI';
@@ -66,6 +68,8 @@ class JobAlert extends Model
             'area' => array_key_exists($input['area'] ?? '', JobClassifier::AREAS) ? $input['area'] : null,
             'tech' => array_values(array_intersect((array) ($input['tech'] ?? []), array_keys(JobClassifier::TECHS))) ?: null,
             'remote' => ! empty($input['remote']) ? true : null,
+            'mode' => array_key_exists($input['mode'] ?? '', JobClassifier::WORK_MODES) ? $input['mode'] : null,
+            'city' => isset($input['city']) ? mb_substr(trim((string) $input['city']), 0, 60) : null,
         ], fn ($v) => $v !== null && $v !== '');
     }
 }

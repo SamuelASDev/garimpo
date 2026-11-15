@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobAlert;
+use App\Models\JobPosting;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ class JobAlertController extends Controller
         return view('alerts.index', [
             'alerts' => $alerts,
             // Prévia: quantas vagas cada alerta encontraria hoje (das últimas 24h)
-            'today' => $alerts->mapWithKeys(fn (JobAlert $a) => [$a->id => \App\Models\JobPosting::filter($a->filters)->where('created_at', '>', now()->subDay())->count()]),
+            'today' => $alerts->mapWithKeys(fn (JobAlert $a) => [$a->id => JobPosting::filter($a->filters)->where('created_at', '>', now()->subDay())->count()]),
         ]);
     }
 
@@ -37,6 +38,8 @@ class JobAlertController extends Controller
             'tech' => ['nullable', 'array', 'max:10'],
             'tech.*' => ['string'],
             'remote' => ['nullable'],
+            'mode' => ['nullable', 'string'],
+            'city' => ['nullable', 'string', 'max:60'],
         ]);
 
         $alert = new JobAlert(['filters' => JobAlert::cleanFilters($data)]);

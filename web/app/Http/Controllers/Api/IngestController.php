@@ -25,6 +25,7 @@ class IngestController extends Controller
             'company' => ['nullable', 'string', 'max:255'],
             'location' => ['nullable', 'string', 'max:255'],
             'remote' => ['nullable', 'boolean'],
+            'work_mode' => ['nullable', 'in:remoto,hibrido,presencial'],
             'description' => ['nullable', 'string', 'max:60000'],
             'posted_at' => ['nullable', 'date'],
         ];

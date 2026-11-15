@@ -53,6 +53,7 @@ class AdminController extends Controller
             'seniority' => ['nullable', 'in:'.implode(',', JobClassifier::SENIORITIES)],
             'area' => ['nullable', 'in:'.implode(',', array_keys(JobClassifier::AREAS))],
             'techs' => ['nullable', 'string', 'max:1000'],
+            'work_mode' => ['nullable', 'in:'.implode(',', array_keys(JobClassifier::WORK_MODES))],
             'description' => ['nullable', 'string', 'max:60000'],
         ]);
 
@@ -64,7 +65,7 @@ class AdminController extends Controller
         $job->update([
             ...$data,
             'techs' => $techs,
-            'remote' => $request->boolean('remote'),
+            'remote' => ($data['work_mode'] ?? null) === 'remoto',
             'description' => (string) $data['description'],
             'summary' => Str::limit(preg_replace('/\s+/', ' ', (string) $data['description']), 280),
         ]);

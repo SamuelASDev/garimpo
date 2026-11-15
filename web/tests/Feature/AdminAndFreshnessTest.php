@@ -90,6 +90,23 @@ class AdminAndFreshnessTest extends TestCase
         $this->assertSame([$used->id], JobPosting::pluck('id')->all());
     }
 
+    public function test_work_mode_comes_from_site_or_text_and_filters_by_city(): void
+    {
+        app(JobIngestor::class)->ingest([
+            ['source' => 'gupy', 'url' => 'https://g.test/1', 'title' => 'Dev PHP', 'company' => 'A', 'location' => 'Curitiba, PR', 'work_mode' => 'hibrido'],
+            ['source' => 'vagas.com', 'url' => 'https://v.test/2', 'title' => 'Dev Java', 'company' => 'B', 'location' => 'São Paulo, SP', 'description' => 'Trabalho 100% home office.'],
+            ['source' => 'infojobs', 'url' => 'https://i.test/3', 'title' => 'Dev Python', 'company' => 'C', 'location' => 'Curitiba, PR', 'description' => 'Atuação presencial no escritório.'],
+            ['source' => 'infojobs', 'url' => 'https://i.test/4', 'title' => 'Dev Go', 'company' => 'D', 'location' => 'Recife, PE'],
+        ]);
+
+        $this->assertSame(['hibrido', 'remoto', 'presencial', null], JobPosting::orderBy('id')->pluck('work_mode')->all());
+        $this->assertTrue(JobPosting::where('url', 'https://v.test/2')->value('remote'));
+
+        $this->get(route('jobs.index', ['city' => 'curitiba']))->assertOk()->assertSee('Dev PHP')->assertSee('Dev Python')->assertDontSee('Dev Java');
+        $this->get(route('jobs.index', ['mode' => 'presencial']))->assertOk()->assertSee('Dev Python')->assertDontSee('Dev PHP')
+            ->assertSee('Senioridade não identificada');
+    }
+
     public function test_stats_page_shows_charts(): void
     {
         JobPosting::create(['source' => 'gupy', 'url' => 'https://x.test/1', 'fingerprint' => 'a', 'title' => 'Dev', 'techs' => ['PHP'], 'seniority' => 'junior', 'posted_at' => now()]);

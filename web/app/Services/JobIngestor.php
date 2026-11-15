@@ -88,6 +88,7 @@ class JobIngestor
                         'description' => $description,
                         'summary' => Str::limit(preg_replace('/\s+/', ' ', $description), 280),
                         ...$this->classifier->classify($existing->title, $description),
+                        ...$this->workMode(['title' => $existing->title, 'location' => $existing->location, 'work_mode' => $item['work_mode'] ?? null, 'remote' => $item['remote'] ?? $existing->remote], $description),
                     ]);
                     $stats['updated']++;
                 } else {
@@ -104,7 +105,7 @@ class JobIngestor
                 'title' => Str::limit($item['title'], 250, ''),
                 'company' => $item['company'] ?? null,
                 'location' => $item['location'] ?? null,
-                'remote' => (bool) ($item['remote'] ?? false),
+                ...$this->workMode($item, $description),
                 'summary' => Str::limit(preg_replace('/\s+/', ' ', $description), 280),
                 'description' => $description,
                 'posted_at' => $postedAt && $postedAt->isPast() ? $postedAt : now(),
@@ -114,6 +115,15 @@ class JobIngestor
         }
 
         return $stats;
+    }
+
+    /** @return array{work_mode: ?string, remote: bool} */
+    private function workMode(array $item, string $description): array
+    {
+        $hint = $item['work_mode'] ?? (! empty($item['remote']) ? 'remoto' : null);
+        $mode = $this->classifier->workMode($item['title'], $item['location'] ?? null, $description, $hint);
+
+        return ['work_mode' => $mode, 'remote' => $mode === 'remoto'];
     }
 
     /**

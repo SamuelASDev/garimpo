@@ -59,7 +59,7 @@ class JobPosting extends Model
     }
 
     /**
-     * Aplica filtros vindos da querystring (q, seniority, area, tech, remote).
+     * Aplica filtros vindos da querystring (q, seniority, area, tech, mode, city; remote = mode remoto).
      * "tech" pode ser uma tecnologia ou uma lista: a vaga precisa ter TODAS as marcadas.
      */
     public function scopeFilter(Builder $query, array $f): Builder
@@ -74,6 +74,8 @@ class JobPosting extends Model
                 ->where('title', 'like', "%$v%")->orWhere('company', 'like', "%$v%")))
             ->when($f['seniority'] ?? null, fn ($q, $v) => $q->where('seniority', $v))
             ->when($f['area'] ?? null, fn ($q, $v) => $q->where('area', $v))
-            ->when($f['remote'] ?? null, fn ($q) => $q->where('remote', true));
+            ->when($f['remote'] ?? null, fn ($q) => $q->where('remote', true))
+            ->when(array_key_exists($f['mode'] ?? '', JobClassifier::WORK_MODES) ? $f['mode'] : null, fn ($q, $v) => $q->where('work_mode', $v))
+            ->when(is_string($f['city'] ?? null) && trim($f['city']) !== '' ? trim($f['city']) : null, fn ($q, $v) => $q->where('location', 'like', '%'.$v.'%'));
     }
 }

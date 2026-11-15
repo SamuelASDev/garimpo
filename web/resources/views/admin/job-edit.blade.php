@@ -34,9 +34,14 @@
                 <span class="text-gray-600">Tecnologias (separadas por vírgula; só as que o filtro conhece são mantidas)</span>
                 <input name="techs" value="{{ old('techs', implode(', ', $job->techs ?? [])) }}" class="mt-1 w-full rounded-lg border-gray-300 text-sm">
             </label>
-            <label class="flex items-center gap-2">
-                <input type="checkbox" name="remote" value="1" @checked(old('remote', $job->remote)) class="rounded border-gray-300 text-emerald-600">
-                <span>Remoto</span>
+            <label class="block sm:w-1/2">
+                <span class="text-gray-600">Modalidade</span>
+                <select name="work_mode" class="mt-1 w-full rounded-lg border-gray-300 text-sm">
+                    <option value="">Não informada</option>
+                    @foreach (\App\Services\JobClassifier::WORK_MODES as $value => $text)
+                        <option value="{{ $value }}" @selected(old('work_mode', $job->work_mode) === $value)>{{ $text }}</option>
+                    @endforeach
+                </select>
             </label>
             <label class="block">
                 <span class="text-gray-600">Descrição</span>

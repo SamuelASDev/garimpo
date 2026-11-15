@@ -106,6 +106,8 @@ class JobClassifier
 
     public const SENIORITIES = ['estagio', 'junior', 'pleno', 'senior', 'especialista'];
 
+    public const WORK_MODES = ['remoto' => 'Remoto', 'hibrido' => 'Híbrido', 'presencial' => 'Presencial'];
+
     /** Nomes legíveis de senioridades e áreas. */
     public const LABELS = ['estagio' => 'Estágio / Trainee', 'junior' => 'Júnior', 'pleno' => 'Pleno', 'senior' => 'Sênior', 'especialista' => 'Especialista',
         'dev' => 'Desenvolvimento', 'suporte' => 'Suporte', 'infra' => 'Infra/DevOps', 'dados' => 'Dados', 'qa' => 'QA/Testes',
@@ -124,6 +126,32 @@ class JobClassifier
             'skills' => $this->match(self::COMPETENCIES, $text),
             'soft_skills' => $this->match(self::SOFT_SKILLS, $text),
         ];
+    }
+
+    /**
+     * Remoto, híbrido ou presencial. Vale primeiro o que o site informou ($hint), depois o que está
+     * no título/local e por último a descrição. null quando a vaga não diz.
+     */
+    public function workMode(string $title, ?string $location, string $description = '', ?string $hint = null): ?string
+    {
+        if (array_key_exists((string) $hint, self::WORK_MODES) && $hint !== 'remoto') {
+            return $hint;
+        }
+
+        foreach ([Str::lower($title.' '.$location), Str::lower(strip_tags($description))] as $text) {
+            $mode = match (true) {
+                (bool) preg_match('~h(í|i)brid|hybrid~iu', $text) => 'hibrido',
+                (bool) preg_match('~\bremot[oa]\b|\bremote\b|home[ -]?office|teletrabalho|anywhere~iu', $text) => 'remoto',
+                (bool) preg_match('~\bpresencial\b|on[- ]?site~iu', $text) => 'presencial',
+                default => null,
+            };
+            if ($mode) {
+                return $mode;
+            }
+        }
+
+        // "Remoto" vindo do site sem nada contra no texto.
+        return $hint === 'remoto' ? 'remoto' : null;
     }
 
     /** Competências técnicas encontradas no texto. @return list<string> */
