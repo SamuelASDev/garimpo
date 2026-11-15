@@ -107,8 +107,9 @@ class ResumeTemplate
                 'tipo' => in_array($r['tipo'] ?? null, ['remover', 'adicionar', 'ajustar'], true) ? $r['tipo'] : 'ajustar',
                 'trecho' => mb_substr(trim($r['trecho']), 0, 300),
                 'motivo' => mb_substr((string) ($r['motivo'] ?? ''), 0, 300),
+                'novo' => is_string($r['novo'] ?? null) && trim($r['novo']) !== '' && ! str_contains($r['novo'], '[[') ? mb_substr(trim($r['novo']), 0, 600) : null,
             ])
-            ->take(8)->values()->all();
+            ->take(10)->values()->all();
     }
 
     /**

@@ -59,16 +59,19 @@ export function registerResumeEditor(Alpine) {
             chatInput: '',
             chatBusy: false,
             undoHtml: null,
+            pages: 1,
 
             init() {
                 editor = new Editor({
                     element: this.$refs.page,
                     extensions: [StarterKit, TextAlign.configure({ types: ['heading', 'paragraph'] }), Highlight, TextStyle, Color, FontSize],
                     content: html,
-                    onUpdate: () => { this.dirty = true; },
+                    onUpdate: () => { this.dirty = true; this.measurePages(); },
                     onTransaction: () => { this.refreshState(); },
                 });
                 this.refreshState();
+                this.$nextTick(() => this.measurePages());
+                window.addEventListener('resize', () => this.measurePages());
                 window.addEventListener('beforeunload', (e) => { if (this.dirty) e.preventDefault(); });
             },
 
@@ -147,6 +150,51 @@ export function registerResumeEditor(Alpine) {
                 this.download(wordUrl);
             },
 
+            /**
+             * Quantas folhas A4 o conteúdo ocupa. A página do editor cresce de folha em folha e mostra onde
+             * cada uma termina (nada é cortado; o PDF/Word quebram nos mesmos pontos, aproximadamente).
+             */
+            measurePages() {
+                const page = this.$refs.page;
+                const content = page?.querySelector('.ProseMirror');
+                if (!content) return;
+                const mm = page.offsetWidth / 210; // a folha tem 210mm de largura (menor no celular: escala junto)
+                const usable = (297 - 32) * mm;    // altura útil: A4 menos as margens de cima e de baixo
+                this.pages = Math.max(1, Math.ceil((content.scrollHeight - 2) / usable));
+            },
+
+            /** Recomendação "ajustar" com texto novo: troca o trecho antigo pelo novo, mantendo a formatação. */
+            replaceRecommendation(rec) {
+                const target = normalize(rec.trecho);
+                let range = null;
+                // 1º: o trecho exato dentro de um texto (mantém negrito/cor ao redor).
+                editor.state.doc.descendants((node, pos) => {
+                    if (range || !node.isText) return !range;
+                    const i = node.text.indexOf(rec.trecho);
+                    if (i >= 0) range = { from: pos + i, to: pos + i + rec.trecho.length };
+                    return false;
+                });
+                // 2º: o parágrafo/tópico que contém o trecho (texto quebrado em partes com formatações diferentes).
+                if (!range) {
+                    editor.state.doc.descendants((node, pos) => {
+                        if (range) return false;
+                        if (node.type.name === 'paragraph' && normalize(node.textContent).includes(target)) {
+                            range = { from: pos + 1, to: pos + node.nodeSize - 1 };
+                            return false;
+                        }
+                        return true;
+                    });
+                }
+                if (!range) {
+                    rec.notFound = true;
+                    return false;
+                }
+                editor.chain().focus().insertContentAt(range, rec.novo).run();
+                rec.applied = true;
+                this.flash('Trecho trocado. Revise e clique em Salvar.');
+                return true;
+            },
+
             /** Recomendação "remover": apaga o item (tópico ou parágrafo) que contém o trecho. */
             applyRecommendation(rec) {
                 const target = normalize(rec.trecho);
@@ -219,7 +267,7 @@ export function registerResumeEditor(Alpine) {
                 if (this.dirty) await this.save();
                 this.suggesting = true;
                 try {
-                    const data = await postJson(suggestUrl, 'POST', {});
+                    const data = await postJson(suggestUrl, 'POST', { pages: this.pages });
                     this.recommendations = data.recommendations.map((r) => ({ ...r, applied: false, notFound: false }));
                     if (!this.recommendations.length) this.flash('A IA não encontrou melhorias importantes. 👏');
                 } catch (e) {

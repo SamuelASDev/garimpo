@@ -49,8 +49,22 @@
             <p x-show="message" x-cloak x-transition x-text="message" class="mt-2 px-3 py-2 rounded-lg bg-gray-900 text-white text-sm"></p>
         </div>
 
+        {{-- Mais de uma página: avisa (o ideal em TI é 1) e a IA sugere o que resumir --}}
+        <div x-show="pages > 1" x-cloak class="mt-3 px-3 py-2 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm flex flex-wrap items-center justify-between gap-2">
+            <span>📄 Seu currículo está com <strong x-text="pages"></strong> páginas. Para vagas de TI, o ideal é <strong>1 página</strong>.</span>
+            <button type="button" x-show="suggestUrl" @click="loadSuggestions()" :disabled="suggesting" class="text-amber-800 underline hover:no-underline disabled:opacity-60">Pedir para a IA sugerir o que resumir</button>
+        </div>
+
         <div class="mt-3 overflow-x-auto">
-            <div class="resume-page" x-ref="page"></div>
+            <div class="relative mx-auto max-w-[210mm]">
+                <div class="resume-page" x-ref="page" :style="`--pages: ${pages}`"></div>
+                {{-- Onde termina cada folha A4 --}}
+                <template x-for="n in pages - 1" :key="n">
+                    <div class="resume-page-break" :style="`top: calc(${n} * 297mm * var(--page-scale, 1))`">
+                        <span x-text="'Página ' + (n + 1)"></span>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 
@@ -71,11 +85,13 @@
                     <li class="rounded-lg border p-3" :class="r.applied ? 'border-emerald-200 bg-emerald-50 opacity-70' : 'border-gray-200'">
                         <span class="text-[11px] font-semibold uppercase px-1.5 py-0.5 rounded"
                               :class="{ 'bg-red-100 text-red-700': r.tipo === 'remover', 'bg-sky-100 text-sky-700': r.tipo === 'adicionar', 'bg-violet-100 text-violet-700': r.tipo === 'ajustar' }" x-text="r.tipo"></span>
-                        <p class="mt-1.5 text-gray-800" x-text="r.trecho"></p>
+                        <p class="mt-1.5 text-gray-800" :class="r.novo ? 'line-through decoration-gray-300 text-gray-500' : ''" x-text="r.trecho"></p>
+                        <p x-show="r.novo" class="mt-1 text-gray-900"><span class="text-emerald-600">→</span> <span x-text="r.novo"></span></p>
                         <p class="mt-1 text-xs text-gray-500" x-text="r.motivo"></p>
                         <div class="mt-2 flex gap-3 text-xs" x-show="!r.applied">
                             <button type="button" x-show="r.tipo === 'remover'" @click="applyRecommendation(r)" class="text-red-600 hover:underline">Remover do currículo</button>
-                            <button type="button" x-show="r.tipo !== 'remover'" @click="askAi('Aplique esta sugestão no meu currículo, sem inventar dados (se faltar algo, me pergunte): ' + r.trecho); r.applied = true" class="text-emerald-700 hover:underline">Pedir para a IA aplicar</button>
+                            <button type="button" x-show="r.tipo === 'ajustar' && r.novo" @click="replaceRecommendation(r)" class="text-violet-700 hover:underline">Trocar no currículo</button>
+                            <button type="button" x-show="r.tipo !== 'remover' && !r.novo" @click="askAi('Aplique esta sugestão no meu currículo, sem inventar dados (se faltar algo, me pergunte): ' + r.trecho); r.applied = true" class="text-emerald-700 hover:underline">Pedir para a IA aplicar</button>
                         </div>
                         <p x-show="r.applied" class="mt-2 text-xs text-emerald-700">✓ Feito</p>
                         <p x-show="r.notFound && !r.applied" class="mt-2 text-xs text-gray-400">Trecho não encontrado (talvez já editado).</p>

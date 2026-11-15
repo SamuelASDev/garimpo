@@ -52,9 +52,13 @@ class AiWriter
 
         Adapte o currículo abaixo para a vaga. Destaque primeiro o que a pessoa já tem e que a vaga pede,
         usando os MESMOS termos da vaga (o ATS procura a palavra literal).
-        OBJETIVO: deve parecer escrito pela própria pessoa, nunca por IA. NÃO cite o nome da empresa,
+        CARGO ALVO E OBJETIVO: reescreva SEMPRE para a área e o nível DESTA vaga, mesmo que o currículo original
+        mire outro cargo. Ex.: currículo de "Desenvolvedor Júnior" e vaga de suporte → "Analista de Suporte Júnior | Suporte Técnico";
+        currículo de suporte e vaga de dados → "Analista de Dados Júnior | BI". Nunca mantenha o cargo antigo se a área mudou.
+        O objetivo deve parecer escrito pela própria pessoa, nunca por IA. NÃO cite o nome da empresa,
         o título exato da vaga nem expressões como "esta vaga" ou "nesta empresa".
         "cargo" = cargo e nível genéricos separados por " | " (ex.: "Desenvolvedor Júnior | Back-end PHP").
+        Cargo alvo atual do currículo (troque se não for da área da vaga): {$this->currentTarget($resume)}.
         "texto" = uma ou duas frases no estilo: "Busco oportunidade como [cargo] na área de [área], onde posso
         aplicar e expandir meus conhecimentos em [habilidades que a pessoa já tem], contribuindo com resultados para a equipe."
         Leia a vaga inteira e identifique TUDO o que ela pede, não só linguagens: atividades (ex.: montagem e
@@ -67,15 +71,7 @@ class AiWriter
         Competências comportamentais pedidas e ainda não demonstradas: {$softMissing}. Se a pessoa já mostra isso
         de alguma forma, destaque; senão, sugira em [[ADICIONE: ...]] um exemplo real que ela poderia contar.
         Mantenha no JSON todo o conteúdo real da pessoa (ela decide o que tirar) e inclua também a chave
-        "recomendacoes": lista de até 8 itens {"tipo":"remover|adicionar|ajustar","trecho":"","motivo":""}.
-        Avalie CADA experiência, atividade, curso, projeto e habilidade em relação ao que a vaga pede:
-        - "remover": só quando o item NÃO tem nenhum valor para esta vaga, nem transferível (ex.: curso de
-          violão numa vaga de suporte; atividade de vendas sem relação com tecnologia). "trecho" = texto EXATO do item.
-        - "ajustar": quando o item é de outra área mas tem algo aproveitável (ex.: dev indo para suporte →
-          destacar atendimento a usuários, resolução de problemas, Linux/redes). Diga como reescrever.
-        - "adicionar": palavra-chave ou informação que a vaga pede e a pessoa pode ter.
-        Na dúvida entre remover e ajustar, escolha AJUSTAR: tempo de experiência e soft skills quase sempre contam.
-        "motivo" em uma frase curta citando o que a vaga pede.
+        "recomendacoes": {$this->recommendationRules('desta vaga', (int) ceil(mb_strlen($resume->plainText()) / 3000))}.
 
         === VAGA ===
         {$job->title} — {$job->company}
@@ -84,6 +80,90 @@ class AiWriter
         === CURRÍCULO ATUAL ===
         {$resume->plainText()}
         TXT;
+    }
+
+    /** Como um currículo ATS deve ser escrito: a IA revisa o que já está lá com estas regras. */
+    private const WRITING_RULES = <<<'TXT'
+    Revise também a ESCRITA do que já está no currículo, item por item, pensando como recrutador e como ATS:
+    o que faz sentido fica; o que está mal escrito, vago, longo ou confuso vira um "ajustar" com o "novo" reescrito.
+    Regras de um bom currículo ATS: atividades começam com verbo de ação no passado ("Desenvolvi", "Implantei",
+    "Reduzi") e dizem o resultado ou impacto (número quando a pessoa já informou); frases curtas e diretas, sem
+    "responsável por" e sem primeira pessoa no meio das atividades; usar os mesmos termos da vaga/área (o ATS busca a
+    palavra literal); tecnologias com a grafia oficial (JavaScript, Node.js, PostgreSQL); datas no formato Mês/Ano;
+    sem repetir a mesma informação em seções diferentes; cada experiência com 2 a 5 tópicos objetivos.
+    TXT;
+
+    /** Cargo alvo que está hoje no currículo (para a IA saber o que trocar). */
+    private function currentTarget(Resume $resume): string
+    {
+        return preg_match('~Cargo alvo:\s*(.+)~iu', $resume->plainText(), $m) ? trim($m[1]) : 'não informado';
+    }
+
+    /**
+     * Currículo com mais de uma página: a IA sugere resumir para caber em uma,
+     * mexendo primeiro no que menos importa e nunca no que é necessário.
+     */
+    private function onePageRule(int $pages): string
+    {
+        if ($pages <= 1) {
+            return '';
+        }
+
+        return <<<TXT
+
+        O currículo está ocupando {$pages} páginas; o ideal para TI é 1 página. Inclua sugestões para caber em uma:
+        "ajustar" encurtando textos longos (objetivo, descrições de projetos, atividades repetitivas) com o "novo" já resumido,
+        e "remover" itens antigos ou sem relação com o alvo. NUNCA sugira cortar o que é necessário: experiências
+        profissionais, formação, tecnologias e requisitos que o alvo pede, contato e cargo alvo ficam (no máximo, resumidos).
+        TXT;
+    }
+
+    /** Como a IA deve montar a lista de sugestões quando há uma vaga alvo. */
+    private function recommendationRules(string $target, int $pages = 1): string
+    {
+        $onePage = $this->onePageRule($pages);
+        $writing = self::WRITING_RULES;
+
+        return <<<TXT
+        lista de até 10 itens {"tipo":"remover|adicionar|ajustar","trecho":"","novo":"","motivo":""}, os mais importantes primeiro.
+        Avalie CADA parte do currículo (cargo alvo, objetivo, experiências, atividades, cursos, projetos, habilidades técnicas,
+        habilidades interpessoais) em relação ao que a vaga pede:
+        - "ajustar" com "trecho" = texto EXATO que está hoje no currículo e "novo" = o texto reescrito, pronto para trocar.
+          Use para: cargo alvo ou objetivo que não batem com a área {$target} (obrigatório se não baterem);
+          atividade de outra área com algo aproveitável (ex.: dev indo para suporte → destacar atendimento a usuários,
+          resolução de problemas, Linux/redes); frase fraca que pode usar os termos da vaga. Nunca invente fatos no "novo".
+        - "remover": habilidade técnica, ferramenta, curso, projeto ou atividade que NÃO ajuda {$target}, nem como
+          conhecimento transferível (ex.: Photoshop numa vaga de back-end; curso de violão numa vaga de suporte).
+          Ajuda a deixar o currículo focado. "trecho" = texto EXATO do item. Não remova experiência profissional inteira:
+          para ela, prefira "ajustar".
+        - "adicionar": palavra-chave ou informação que a vaga pede e a pessoa pode ter ("novo" vazio).
+        "motivo" em uma frase curta citando o que a vaga pede.
+        {$writing}{$onePage}
+        TXT;
+    }
+
+    /**
+     * Sugestões para um currículo já adaptado ("Analisar de novo" na página da vaga).
+     *
+     * @return array{data: array<string, mixed>, provider: string}
+     */
+    public function suggestForJob(Resume $draft, JobPosting $job, int $pages = 1): array
+    {
+        $rules = $this->recommendationRules('desta vaga', $pages);
+
+        return $this->json(<<<TXT
+        Você é recrutador e especialista em ATS no Brasil. Compare o currículo com a vaga e responda SOMENTE com JSON:
+        {"recomendacoes": [...]}, onde "recomendacoes" é uma {$rules}
+        Cargo alvo atual: {$this->currentTarget($draft)}. Se não for da área da vaga, a primeira sugestão é "ajustar" o cargo alvo
+        e a segunda, o objetivo. Não repita avisos [[ADICIONE: ...]] que já estão no currículo.
+
+        === VAGA ===
+        {$job->title}
+        {$job->description}
+
+        === CURRÍCULO ===
+        {$draft->plainText()}
+        TXT, 'recomendacoes');
     }
 
     /**
@@ -116,20 +196,25 @@ class AiWriter
     }
 
     /** Melhorias gerais para o currículo principal (sem vaga específica). @return array{data: array<string, mixed>, provider: string} */
-    public function suggest(Resume $resume): array
+    public function suggest(Resume $resume, int $pages = 1): array
     {
+        $onePage = str_replace(['o alvo pede', 'com o alvo'], ['as vagas de TI pedem', 'com TI'], $this->onePageRule($pages));
+        $writing = self::WRITING_RULES;
+
         return $this->json(<<<TXT
         Você é recrutador e especialista em ATS no Brasil. Analise o currículo abaixo e responda SOMENTE com JSON:
-        {"recomendacoes": [{"tipo": "remover|adicionar|ajustar", "trecho": "", "motivo": ""}]}
+        {"recomendacoes": [{"tipo": "remover|adicionar|ajustar", "trecho": "", "novo": "", "motivo": ""}]}
         Até 8 itens, os mais importantes primeiro. Este é o currículo PRINCIPAL (serve para várias vagas de TI),
         então quase tudo de tecnologia deve ficar. Prefira "ajustar" e "adicionar".
         - "remover": RARO. Só para item repetido, dado pessoal que não deve estar em currículo (CPF, RG, estado civil,
           idade, foto) ou item sem relação nenhuma com trabalho/TI. NUNCA sugira remover cidade/estado, contato,
           tecnologias, ferramentas (inclusive de IA), conceitos técnicos, cursos ou projetos de TI.
           "trecho" = texto EXATO do item.
-        - "ajustar": como reescrever algo para ficar mais forte (verbo de ação, resultado, número, palavra-chave).
+        - "ajustar": "trecho" = texto EXATO de hoje e "novo" = o texto reescrito mais forte (verbo de ação, resultado,
+          número, palavra-chave), sem inventar fatos.
         - "adicionar": seção ou informação que falta (ex.: resumo, links de projetos, métricas).
         "motivo" em uma frase curta. Não invente fatos sobre a pessoa.
+        {$writing}{$onePage}
 
         === CURRÍCULO ===
         {$resume->plainText()}

@@ -33,6 +33,23 @@ class ResumeAssistantTest extends TestCase
         return [$user, $job];
     }
 
+    public function test_job_resume_suggestions_bring_rewritten_text_and_consider_pages(): void
+    {
+        [$user, $job] = $this->userWithTailoring();
+        $this->fakeAi(['recomendacoes' => [
+            ['tipo' => 'ajustar', 'trecho' => 'Cargo alvo: Desenvolvedor Júnior', 'novo' => 'Cargo alvo: Analista de Suporte Júnior', 'motivo' => 'A vaga é de suporte.'],
+            ['tipo' => 'remover', 'trecho' => 'Photoshop', 'motivo' => 'Não ajuda nesta vaga.'],
+        ]]);
+
+        $this->actingAs($user)->postJson(route('jobs.resume.suggestions', $job), ['pages' => 2])->assertOk()
+            ->assertJsonPath('recommendations.0.novo', 'Cargo alvo: Analista de Suporte Júnior')
+            ->assertJsonPath('recommendations.1.novo', null);
+
+        $this->assertCount(2, ResumeTailoring::first()->recommendations);
+        Http::assertSent(fn ($request) => str_contains($request['messages'][0]['content'], 'está ocupando 2 páginas')
+            && str_contains($request['messages'][0]['content'], 'Revise também a ESCRITA'));
+    }
+
     public function test_resumes_page_lists_main_and_job_resumes(): void
     {
         [$user] = $this->userWithTailoring();

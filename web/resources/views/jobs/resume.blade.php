@@ -25,6 +25,7 @@
                 'placeholders' => $placeholders,
                 'recommendations' => $tailoring->recommendations ?? [],
                 'assistantUrl' => route('jobs.resume.assistant', $job),
+                'suggestUrl' => route('jobs.resume.suggestions', $job),
             ]">
                 {{-- Descrição incompleta no site de origem: a pessoa cola o texto completo (vale só para ela) --}}
                 @if ($job->pastedByUser || $job->isShort())

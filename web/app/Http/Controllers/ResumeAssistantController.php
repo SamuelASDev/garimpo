@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\JobPosting;
+use App\Models\Resume;
 use App\Models\ResumeTailoring;
 use App\Services\AiWriter;
 use App\Services\ResumeTemplate;
@@ -58,7 +59,7 @@ class ResumeAssistantController extends Controller
         }
 
         try {
-            $result = $writer->suggest($resume);
+            $result = $writer->suggest($resume, $this->pages($request));
         } catch (\RuntimeException $e) {
             return response()->json(['message' => $e->getMessage()], 503);
         }
@@ -66,6 +67,35 @@ class ResumeAssistantController extends Controller
         $resume->update(['recommendations' => ResumeTemplate::recommendations($result['data']['recomendacoes'] ?? [])]);
 
         return response()->json(['recommendations' => $resume->recommendations]);
+    }
+
+    /** Sugestões para o currículo adaptado a uma vaga (cargo alvo, objetivo, o que tirar e o que ajustar). */
+    public function jobSuggestions(Request $request, JobPosting $job, AiWriter $writer): JsonResponse
+    {
+        $job = $job->forUser($request->user());
+        $tailoring = ResumeTailoring::where('user_id', $request->user()->id)->where('job_posting_id', $job->id)->first();
+        if (! $tailoring) {
+            return response()->json(['message' => 'Gere o currículo para esta vaga primeiro.'], 422);
+        }
+        if ($limit = $this->limitReached($request)) {
+            return $limit;
+        }
+
+        try {
+            $result = $writer->suggestForJob(new Resume(['html' => $tailoring->content]), $job, $this->pages($request));
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 503);
+        }
+
+        $tailoring->update(['recommendations' => ResumeTemplate::recommendations($result['data']['recomendacoes'] ?? [])]);
+
+        return response()->json(['recommendations' => $tailoring->recommendations]);
+    }
+
+    /** Páginas que o currículo ocupa no editor (1 a 5). */
+    private function pages(Request $request): int
+    {
+        return max(1, min(5, $request->integer('pages', 1)));
     }
 
     private function limitReached(Request $request): ?JsonResponse

@@ -7,6 +7,10 @@
 /* Folha do currículo (editor e impressão): modelo ATS de uma coluna */
 .resume-page { background: #fff; width: 100%; max-width: 210mm; min-height: 297mm; margin: 0 auto; padding: 16mm 18mm; box-shadow: 0 1px 3px rgb(0 0 0 / .08), 0 8px 24px rgb(0 0 0 / .06); font-family: Arial, Helvetica, sans-serif; font-size: 10pt; line-height: 1.4; color: #111827; }
 .resume-page .ProseMirror { outline: none; min-height: 250mm; }
+/* A folha cresce de A4 em A4 (nada é cortado); a linha tracejada mostra onde começa cada página. */
+.resume-page { min-height: calc(var(--pages, 1) * 297mm); }
+.resume-page-break { position: absolute; left: 0; right: 0; height: 0; border-top: 2px dashed #cbd5e1; pointer-events: none; }
+.resume-page-break span { position: absolute; right: 8px; top: -10px; padding: 0 6px; font-size: 11px; color: #64748b; background: #f8fafc; border-radius: 4px; }
 .resume-page h1 { font-size: 20pt; font-weight: 700; margin: 0 0 2pt; letter-spacing: .5px; }
 .resume-page h2 { font-size: 10.5pt; font-weight: 700; text-transform: uppercase; color: #1f5f8b; border-bottom: 1.5px solid #1f5f8b; padding-bottom: 1pt; margin: 11pt 0 5pt; }
 .resume-page h3 { font-size: 10.5pt; font-weight: 700; margin: 6pt 0 2pt; }
