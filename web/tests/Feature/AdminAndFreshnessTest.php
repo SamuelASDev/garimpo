@@ -42,6 +42,17 @@ class AdminAndFreshnessTest extends TestCase
         $this->assertSame([1, 2], [$stats['created'], $stats['duplicated']]);
     }
 
+    public function test_pending_skips_jobs_already_collected_from_a_better_site(): void
+    {
+        config(['services.ingest.token' => 'segredo']);
+        app(JobIngestor::class)->ingest([['source' => 'gupy', 'url' => 'https://g.test/1', 'title' => 'Desenvolvedor PHP', 'company' => 'Nexdom']]);
+
+        $this->postJson('/api/ingest/pending', ['jobs' => [
+            ['url' => 'https://vagas.test/1', 'title' => 'Desenvolvedor PHP', 'company' => 'NEXDOM'],
+            ['url' => 'https://vagas.test/2', 'title' => 'Desenvolvedor Java', 'company' => 'Nexdom'],
+        ]], ['Authorization' => 'Bearer segredo'])->assertOk()->assertExactJson(['urls' => ['https://vagas.test/2']]);
+    }
+
     public function test_alerts_ignore_old_postings_that_arrived_now(): void
     {
         $alert = User::factory()->create()->jobAlerts()->create(['name' => 'Tudo', 'filters' => []]);

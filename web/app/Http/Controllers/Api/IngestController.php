@@ -50,13 +50,15 @@ class IngestController extends Controller
             'jobs' => ['required_without:urls', 'array', 'max:3000'],
             'jobs.*.url' => ['required', 'string', 'max:1000'],
             'jobs.*.title' => ['required', 'string', 'max:500'],
+            'jobs.*.company' => ['nullable', 'string', 'max:255'],
             'urls' => ['required_without:jobs', 'array', 'max:3000'],
             'urls.*' => ['string', 'max:1000'],
         ]);
 
         $input = isset($data['jobs']) ? array_column($data['jobs'], 'title', 'url') : $data['urls'];
+        $companies = isset($data['jobs']) ? array_column($data['jobs'], 'company', 'url') : [];
 
-        return response()->json(['urls' => $ingestor->pendingDescriptions($input)]);
+        return response()->json(['urls' => $ingestor->pendingDescriptions($input, $companies)]);
     }
 
     private function authorizeCollector(Request $request): void

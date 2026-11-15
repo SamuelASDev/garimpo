@@ -23,11 +23,25 @@ class JobIngestor
      * Com títulos (`[url => título]`), também descarta o que não é TI: a vaga seria ignorada na ingestão,
      * então não vale abrir a página dela (economiza acessos e evita bloqueio dos sites).
      *
+     * Com empresas (`[url => empresa]`), também descarta a vaga que já entrou por outro site (mesmo cargo + empresa):
+     * ela seria marcada como repetida, então não vale abrir a página do site que só mostra resumo.
+     *
      * @param  list<string>|array<string, string>  $urls
+     * @param  array<string, ?string>  $companies
      * @return list<string>
      */
-    public function pendingDescriptions(array $urls): array
+    public function pendingDescriptions(array $urls, array $companies = []): array
     {
+        if ($companies !== [] && ! array_is_list($urls)) {
+            $known = JobPosting::whereIn('fingerprint', collect($urls)->map(fn ($title, $url) => self::fingerprint((string) $title, (string) ($companies[$url] ?? '')))->all())
+                ->get(['url', 'fingerprint'])->groupBy('fingerprint');
+            $urls = array_filter($urls, function ($title, $url) use ($companies, $known): bool {
+                $match = $known[self::fingerprint((string) $title, (string) ($companies[$url] ?? ''))] ?? null;
+
+                return ! $match || $match->contains('url', $url);
+            }, ARRAY_FILTER_USE_BOTH);
+        }
+
         if (! array_is_list($urls)) {
             $urls = array_keys(array_filter($urls, fn ($title): bool => is_string($title) && $this->classifier->isTech($title)));
         }

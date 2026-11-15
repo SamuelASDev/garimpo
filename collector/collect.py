@@ -460,8 +460,8 @@ def enrich(jobs: list[dict]) -> None:
     if not candidates:
         return
     try:
-        # Manda o título junto: o site só devolve as vagas de TI (as outras seriam descartadas mesmo).
-        payload = {"jobs": [{"url": j["url"], "title": j["title"][:500]} for j in candidates]}
+        # Manda título e empresa: o site só devolve as vagas de TI que ainda não tem (nem vindas de outro site).
+        payload = {"jobs": [{"url": j["url"], "title": j["title"][:500], "company": (j.get("company") or "")[:255]} for j in candidates]}
         pending = set(api("/pending", payload)["urls"])
     except Exception as exc:
         print(f"[detalhes] não consegui consultar o site: {exc}", file=sys.stderr)
@@ -508,8 +508,13 @@ def main() -> None:
     print(f"{len(unique)} vagas coletadas")
     if os.getenv("DRY_RUN") == "1":
         return
-    enrich(unique)
-    send(unique)
+    # Primeiro os sites que já trazem a descrição completa (Gupy, LinkedIn, Indeed...). Depois os que só
+    # mostram resumo (vagas.com etc.): se a mesma vaga já entrou por um site melhor, ela fica com a versão
+    # boa e nem abrimos a página do site fraco.
+    send([j for j in unique if j["source"] not in DETAIL_SOURCES])
+    weak = [j for j in unique if j["source"] in DETAIL_SOURCES]
+    enrich(weak)
+    send(weak)
 
 
 if __name__ == "__main__":
