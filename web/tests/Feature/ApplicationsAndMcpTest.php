@@ -5,6 +5,8 @@ namespace Tests\Feature;
 use App\Mcp\Servers\GarimpoServer;
 use App\Mcp\Tools\AddApplication;
 use App\Mcp\Tools\PrepareTailoredResume;
+use App\Mcp\Tools\ReviewResume;
+use App\Mcp\Tools\SaveSuggestions;
 use App\Mcp\Tools\SaveTailoredResume;
 use App\Mcp\Tools\SearchJobs;
 use App\Mcp\Tools\UpdateApplication;
@@ -114,6 +116,15 @@ class ApplicationsAndMcpTest extends TestCase
         $this->assertSame('mcp', $tailoring->generated_by);
         $this->assertStringContainsString('<h1 style="text-align: center">Fulano</h1>', $tailoring->content);
         $this->assertSame('remover', $tailoring->recommendations[0]['tipo']);
+
+        // Analisar e sugerir melhorias (igual ao botão do editor) e salvar no painel do editor.
+        GarimpoServer::actingAs($user)->tool(ReviewResume::class, ['job_id' => $job->id])->assertOk()
+            ->assertSee(['Revise também a ESCRITA', 'save-suggestions', 'job_id='.$job->id]);
+        GarimpoServer::actingAs($user)->tool(SaveSuggestions::class, ['job_id' => $job->id, 'recomendacoes' => [
+            ['tipo' => 'ajustar', 'trecho' => 'Fulano', 'novo' => 'Fulano de Tal', 'motivo' => 'Nome completo'],
+        ]])->assertOk()->assertSee('1 sugestões salvas');
+        $this->assertSame('Fulano de Tal', $tailoring->fresh()->recommendations[0]['novo']);
+        GarimpoServer::actingAs(User::factory()->create())->tool(ReviewResume::class, ['job_id' => $job->id])->assertHasErrors();
 
         GarimpoServer::actingAs($user)->tool(AddApplication::class, ['job_id' => $job->id])->assertOk();
         $app = $user->jobApplications()->sole();

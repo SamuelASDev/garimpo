@@ -83,7 +83,7 @@ class AiWriter
     }
 
     /** Como um currículo ATS deve ser escrito: a IA revisa o que já está lá com estas regras. */
-    private const WRITING_RULES = <<<'TXT'
+    public const WRITING_RULES = <<<'TXT'
     Revise também a ESCRITA do que já está no currículo, item por item, pensando como recrutador e como ATS:
     o que faz sentido fica; o que está mal escrito, vago, longo ou confuso vira um "ajustar" com o "novo" reescrito.
     Regras de um bom currículo ATS: atividades começam com verbo de ação no passado ("Desenvolvi", "Implantei",
@@ -149,9 +149,23 @@ class AiWriter
      */
     public function suggestForJob(Resume $draft, JobPosting $job, int $pages = 1): array
     {
+        return $this->json($this->reviewPrompt($draft, $job, $pages), 'recomendacoes');
+    }
+
+    /**
+     * Prompt da análise de melhorias (botão do editor e ferramenta review-resume da IA conectada).
+     * Com vaga: compara com ela; sem vaga: currículo principal, para TI em geral.
+     */
+    public function reviewPrompt(Resume $resume, ?JobPosting $job = null, int $pages = 1): string
+    {
+        return $job ? $this->jobReviewPrompt($resume, $job, $pages) : $this->mainReviewPrompt($resume, $pages);
+    }
+
+    private function jobReviewPrompt(Resume $draft, JobPosting $job, int $pages): string
+    {
         $rules = $this->recommendationRules('desta vaga', $pages);
 
-        return $this->json(<<<TXT
+        return <<<TXT
         Você é recrutador e especialista em ATS no Brasil. Compare o currículo com a vaga e responda SOMENTE com JSON:
         {"recomendacoes": [...]}, onde "recomendacoes" é uma {$rules}
         Cargo alvo atual: {$this->currentTarget($draft)}. Se não for da área da vaga, a primeira sugestão é "ajustar" o cargo alvo
@@ -163,7 +177,7 @@ class AiWriter
 
         === CURRÍCULO ===
         {$draft->plainText()}
-        TXT, 'recomendacoes');
+        TXT;
     }
 
     /**
@@ -198,10 +212,15 @@ class AiWriter
     /** Melhorias gerais para o currículo principal (sem vaga específica). @return array{data: array<string, mixed>, provider: string} */
     public function suggest(Resume $resume, int $pages = 1): array
     {
+        return $this->json($this->reviewPrompt($resume, null, $pages), 'recomendacoes');
+    }
+
+    private function mainReviewPrompt(Resume $resume, int $pages): string
+    {
         $onePage = str_replace(['o alvo pede', 'com o alvo'], ['as vagas de TI pedem', 'com TI'], $this->onePageRule($pages));
         $writing = self::WRITING_RULES;
 
-        return $this->json(<<<TXT
+        return <<<TXT
         Você é recrutador e especialista em ATS no Brasil. Analise o currículo abaixo e responda SOMENTE com JSON:
         {"recomendacoes": [{"tipo": "remover|adicionar|ajustar", "trecho": "", "novo": "", "motivo": ""}]}
         Até 8 itens, os mais importantes primeiro. Este é o currículo PRINCIPAL (serve para várias vagas de TI),
@@ -218,7 +237,7 @@ class AiWriter
 
         === CURRÍCULO ===
         {$resume->plainText()}
-        TXT, 'recomendacoes');
+        TXT;
     }
 
     /** @return array{data: array<string, mixed>, provider: string} */
