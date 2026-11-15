@@ -1,153 +1,77 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" @class(['dark' => ($appearance ?? 'system') == 'dark'])>
+<html lang="pt-BR">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    {{-- Inline script to detect system dark mode preference and apply it immediately --}}
-    <script>
-        (function() {
-            const appearance = '{{ $appearance ?? "system" }}';
-
-            if (appearance === 'system') {
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-                if (prefersDark) {
-                    document.documentElement.classList.add('dark');
-                }
-            }
-        })();
-    </script>
-
-    <style>
-        html {
-            background-color: oklch(1 0 0);
-        }
-
-        html.dark {
-            background-color: oklch(0.145 0 0);
-        }
-    </style>
-
-    <title>Autorizar acesso - {{ config('app.name', 'MCP Server') }}</title>
-        <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-
-    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="shortcut icon" href="/favicon.ico" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-title" content="Authorize MCP" />
-    <link rel="manifest" href="/site.webmanifest" />
-
+    <meta name="robots" content="noindex">
+    <title>Autorizar acesso · {{ config('app.name', 'Garimpo') }}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
-
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700&display=swap" rel="stylesheet" />
     @vite(['resources/css/app.css'])
 </head>
-<body class="font-sans antialiased bg-background text-foreground">
-<div class="min-h-screen flex items-center justify-center p-4">
-    <div class="w-full max-w-md">
-        <!-- Card Container -->
-        <div class="rounded-lg border bg-card text-card-foreground shadow-sm">
-            <!-- Header -->
-            <div class="flex flex-col space-y-1.5 p-6">
-                <div class="flex items-center justify-center mb-4">
-                    @if ($client->logo_uri ?? null)
-                    <img src="{{ $client->logo_uri }}" alt="{{ $client->name }}" class="h-12 w-12 rounded object-contain">
-                    @else
-                    <!-- Shield Icon -->
-                    <svg class="h-12 w-12 text-primary" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.031 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+{{-- Tela "Permitir que <IA> acesse sua conta do Garimpo?" (login OAuth das IAs conectadas), no visual do site. --}}
+<body class="font-sans antialiased bg-gray-50 text-gray-900">
+<div class="min-h-screen flex flex-col items-center justify-center p-4">
+    <a href="{{ route('jobs.index') }}" class="flex items-center gap-2 font-bold text-gray-900 mb-6">
+        <x-application-logo class="w-9 h-9" />
+        {{ config('app.name') }}
+    </a>
+
+    <div class="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-sm">
+        <div class="p-6 text-center">
+            <div class="mx-auto w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-3xl" aria-hidden="true">🤖</div>
+            <h1 class="mt-4 text-xl font-bold">Conectar {{ $client->name }} ao {{ config('app.name') }}?</h1>
+            <p class="mt-2 text-sm text-gray-600">
+                Este aplicativo poderá, em seu nome: <strong>buscar vagas</strong>, <strong>ler e editar seus currículos</strong>
+                e <strong>acompanhar suas candidaturas</strong>.
+            </p>
+        </div>
+
+        <div class="px-6 space-y-3 text-sm">
+            <div class="rounded-xl bg-gray-50 border border-gray-200 p-3">
+                <p class="text-xs text-gray-500">Conta do {{ config('app.name') }}</p>
+                <p class="font-medium text-gray-900 break-all">{{ $user->email }}</p>
+            </div>
+
+            @php($redirectUri = request()->query('redirect_uri', $client->redirect_uris[0] ?? null))
+            @if ($redirectUri)
+                <p class="text-xs text-gray-500 break-all">Depois de autorizar, você volta para <span class="font-mono text-gray-700">{{ $redirectUri }}</span></p>
+            @endif
+
+            <ul class="text-gray-600 space-y-1.5">
+                <li class="flex gap-2"><span class="text-emerald-600">✓</span> Nada é alterado sem você pedir para a IA.</li>
+                <li class="flex gap-2"><span class="text-emerald-600">✓</span> Você pode desconectar quando quiser em <strong>Conectar IA</strong>.</li>
+            </ul>
+        </div>
+
+        <div class="p-6 flex gap-3">
+            <form method="POST" action="{{ route('passport.authorizations.deny') }}" class="flex-1">
+                @csrf
+                @method('DELETE')
+                <input type="hidden" name="state" value="">
+                <input type="hidden" name="client_id" value="{{ $client->id }}">
+                <input type="hidden" name="auth_token" value="{{ $authToken }}">
+                <button type="submit" class="w-full h-11 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium hover:bg-gray-50">Cancelar</button>
+            </form>
+
+            <form method="POST" action="{{ route('passport.authorizations.approve') }}" class="flex-1" id="authorizeForm">
+                @csrf
+                <input type="hidden" name="state" value="">
+                <input type="hidden" name="client_id" value="{{ $client->id }}">
+                <input type="hidden" name="auth_token" value="{{ $authToken }}">
+                <button type="submit" id="authorizeButton" class="w-full h-11 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700 disabled:opacity-60 inline-flex items-center justify-center gap-2">
+                    <svg id="loadingSpinner" class="animate-spin h-4 w-4 hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                     </svg>
-                    @endif
-                </div>
-
-                <h3 class="text-2xl font-semibold leading-none tracking-tight text-center">
-                    Autorizar {{ $client->name }}
-                </h3>
-
-                <p class="text-sm text-muted-foreground text-center">
-                    Este aplicativo poderá, em seu nome:<br/>buscar vagas, ler e editar seus currículos e acompanhar suas candidaturas no {{ config('app.name') }}.
-                </p>
-
-                @php($redirectUri = request()->query('redirect_uri', $client->redirect_uris[0] ?? null))
-                @if ($redirectUri)
-                <p class="text-xs text-muted-foreground text-center break-all">
-                    Depois você volta para {{ $redirectUri }}
-                </p>
-                @endif
-
-                @if ($client->client_uri ?? null)
-                <a href="{{ $client->client_uri }}" target="_blank" rel="noopener noreferrer" class="text-sm text-primary underline text-center">
-                    {{ $client->client_uri }}
-                </a>
-                @endif
-            </div>
-
-            <!-- Content -->
-            <div class="p-6 pt-0 space-y-4">
-                <!-- User Info -->
-                <div class="rounded-lg border p-4 bg-muted/50">
-                    <p class="text-sm text-muted-foreground mb-2">Conectado como:</p>
-                    <p class="font-medium">{{ $user->email }}</p>
-                </div>
-
-                <!-- Scopes / Permissions -->
-                @if(count($scopes) > 0)
-                    <div class="space-y-2">
-                        <p class="text-sm font-medium">Permissões:</p>
-
-                        <ul class="space-y-2">
-                            @foreach($scopes as $scope)
-                                <li class="flex items-start gap-2">
-                                    <div class="rounded-full bg-primary/10 p-1 mt-0.5">
-                                        <div class="h-1.5 w-1.5 rounded-full bg-primary"></div>
-                                    </div>
-                                    <span class="text-sm text-muted-foreground">
-                                        {{ $scope->id === 'mcp:use' ? 'Usar o servidor MCP do Garimpo' : $scope->description }}
-                                    </span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-            </div>
-
-            <!-- Footer With Buttons -->
-            <div class="flex items-center p-6 pt-0 gap-3">
-                <!-- Deny Form -->
-                <form method="POST" action="{{ route('passport.authorizations.deny') }}" class="flex-1">
-                    @csrf
-                    @method('DELETE')
-                    <input type="hidden" name="state" value="">
-                    <input type="hidden" name="client_id" value="{{ $client->id }}">
-                    <input type="hidden" name="auth_token" value="{{ $authToken }}">
-                    <button type="submit" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 w-full">
-                        <svg class="mr-2 h-4 w-4" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                        </svg>
-                        Cancelar
-                    </button>
-                </form>
-
-                <!-- Approve Form -->
-                <form method="POST" action="{{ route('passport.authorizations.approve') }}" class="flex-1" id="authorizeForm">
-                    @csrf
-                    <input type="hidden" name="state" value="">
-                    <input type="hidden" name="client_id" value="{{ $client->id }}">
-                    <input type="hidden" name="auth_token" value="{{ $authToken }}">
-                    <button type="submit" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full" id="authorizeButton">
-                        <span id="authorizeText">Autorizar</span>
-
-                        <svg id="loadingSpinner" class="animate-spin -ml-1 mr-3 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                    </button>
-                </form>
-            </div>
+                    <span id="authorizeText">Autorizar</span>
+                </button>
+            </form>
         </div>
     </div>
+
+    <p class="mt-6 text-xs text-gray-400">Só autorize se foi você que pediu para conectar esta IA agora.</p>
 </div>
 
 <script>
