@@ -145,6 +145,15 @@ chave, o site funciona normalmente, só sem as funções de IA.
 O coletor (`collector/collect.py`) busca as vagas e envia para `POST /api/ingest` do site. O site descarta o que
 não é de TI, remove duplicadas, formata a descrição e classifica.
 
+Arquivos do coletor:
+
+| Arquivo | O que faz |
+|---|---|
+| `collect.py` | ponto de entrada: coleta, busca descrições completas e envia em lotes |
+| `sources.py` | uma função por site (página de busca pública) |
+| `details.py` | página de cada vaga: descrição completa, data, local e modalidade (JSON-LD) |
+| `common.py` | termos de busca, HTTP e limpeza de HTML |
+
 Rodar manualmente contra o site local (Git Bash / Linux / macOS):
 
 ```bash
@@ -171,6 +180,9 @@ cd web
 php artisan test
 ```
 
+No GitHub, o workflow **Testes** (`.github/workflows/tests.yml`) roda os testes, procura falhas de segurança
+conhecidas nas bibliotecas (`composer audit` / `npm audit`) e confere o coletor a cada push na `main` e na `dev`.
+
 ## Publicar na Hostinger (ou outra hospedagem compartilhada)
 
 Funciona no plano de hospedagem compartilhada (Premium/Business), com SSH.
@@ -179,8 +191,9 @@ Funciona no plano de hospedagem compartilhada (Premium/Business), com SSH.
 
 1. **Subdomínio**: hPanel → Domínios → Subdomínios → crie (ex.: `garimpo.seudominio.com.br`) com a pasta
    `public_html/garimpo` (onde você vai clonar o repositório). O `.htaccess` da raiz do repositório encaminha tudo
-   para `web/public` e bloqueia arquivos sensíveis (`.env`, `.git`, banco, chaves). Se o hPanel deixar escolher a
-   pasta `public_html/garimpo/web/public` direto, também funciona (e o `.htaccess` da raiz nem é usado).
+   para `web/public`, devolve 404 para qualquer coisa dentro de `web/` que não seja `web/public` (código,
+   `vendor`, configuração) e bloqueia arquivos sensíveis (`.env`, `.git`, banco, chaves). **Mais seguro ainda:** se
+   o hPanel deixar escolher a pasta `public_html/garimpo/web/public` direto, use-a (o `.htaccess` da raiz nem é usado).
 2. **PHP**: hPanel → Avançado → Configuração do PHP → versão **8.3 ou mais nova**, com `sodium` ligado.
 3. **Banco MySQL**: hPanel → Bancos de dados → crie banco, usuário e senha.
 4. **SSL**: ative o certificado gratuito para o subdomínio (o site precisa de HTTPS).

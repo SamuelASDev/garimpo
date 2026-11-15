@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreJobAlertRequest;
 use App\Models\JobAlert;
 use App\Models\JobPosting;
 use App\Models\User;
@@ -18,29 +19,19 @@ class JobAlertController extends Controller
         return view('alerts.index', [
             'alerts' => $alerts,
             // Prévia: quantas vagas cada alerta encontraria hoje (das últimas 24h)
-            'today' => $alerts->mapWithKeys(fn (JobAlert $a) => [$a->id => JobPosting::filter($a->filters)->where('created_at', '>', now()->subDay())->count()]),
+            'today' => $alerts->mapWithKeys(fn (JobAlert $a) => [$a->id => JobPosting::filter($a->filters)->where('created_at', '>', now()->subDay())->where('posted_at', '>=', now()->subDay())->count()]),
         ]);
     }
 
     /** Cria o alerta com os filtros que estavam aplicados na lista de vagas. */
-    public function store(Request $request): RedirectResponse
+    public function store(StoreJobAlertRequest $request): RedirectResponse
     {
         $user = $request->user();
         if ($user->jobAlerts()->count() >= JobAlert::MAX_PER_USER) {
             return back()->with('error', 'Você já tem '.JobAlert::MAX_PER_USER.' alertas. Apague um para criar outro.');
         }
 
-        $data = $request->validate([
-            'name' => ['nullable', 'string', 'max:80'],
-            'q' => ['nullable', 'string', 'max:60'],
-            'seniority' => ['nullable', 'string'],
-            'area' => ['nullable', 'string'],
-            'tech' => ['nullable', 'array', 'max:10'],
-            'tech.*' => ['string'],
-            'remote' => ['nullable'],
-            'mode' => ['nullable', 'string'],
-            'city' => ['nullable', 'string', 'max:60'],
-        ]);
+        $data = $request->validated();
 
         $alert = new JobAlert(['filters' => JobAlert::cleanFilters($data)]);
         $alert->name = trim((string) ($data['name'] ?? '')) ?: mb_substr($alert->describe(), 0, 80);

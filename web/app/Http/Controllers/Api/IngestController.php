@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\JobIngestor;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 
 /**
@@ -34,10 +35,10 @@ class IngestController extends Controller
             ->filter(fn ($item): bool => is_array($item) && Validator::make($item, $rules)->passes())
             ->values();
 
-        return response()->json([
-            ...$ingestor->ingest($valid->all()),
-            'invalid' => count($request->input('jobs')) - $valid->count(),
-        ]);
+        $stats = [...$ingestor->ingest($valid->all()), 'invalid' => count($request->input('jobs')) - $valid->count()];
+        Log::info('Coleta: lote recebido', $stats);
+
+        return response()->json($stats);
     }
 
     /**
@@ -65,6 +66,9 @@ class IngestController extends Controller
     private function authorizeCollector(Request $request): void
     {
         $token = (string) config('services.ingest.token');
-        abort_unless($token !== '' && hash_equals($token, (string) $request->bearerToken()), 401);
+        if ($token === '' || ! hash_equals($token, (string) $request->bearerToken())) {
+            Log::warning('Coleta: token inválido', ['ip' => $request->ip()]);
+            abort(401);
+        }
     }
 }

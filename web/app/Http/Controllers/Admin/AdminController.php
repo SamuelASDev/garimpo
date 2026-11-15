@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\UpdateJobPostingRequest;
 use App\Models\JobPosting;
 use App\Models\User;
 use App\Services\JobClassifier;
@@ -43,19 +44,9 @@ class AdminController extends Controller
         return view('admin.job-edit', ['job' => $job, 'labels' => JobClassifier::LABELS]);
     }
 
-    public function updateJob(Request $request, JobPosting $job): RedirectResponse
+    public function updateJob(UpdateJobPostingRequest $request, JobPosting $job): RedirectResponse
     {
-        $data = $request->validate([
-            'title' => ['required', 'string', 'max:250'],
-            'company' => ['nullable', 'string', 'max:255'],
-            'location' => ['nullable', 'string', 'max:255'],
-            'url' => ['required', 'url', 'max:1000'],
-            'seniority' => ['nullable', 'in:'.implode(',', JobClassifier::SENIORITIES)],
-            'area' => ['nullable', 'in:'.implode(',', array_keys(JobClassifier::AREAS))],
-            'techs' => ['nullable', 'string', 'max:1000'],
-            'work_mode' => ['nullable', 'in:'.implode(',', array_keys(JobClassifier::WORK_MODES))],
-            'description' => ['nullable', 'string', 'max:60000'],
-        ]);
+        $data = $request->validated();
 
         // Só tecnologias conhecidas (são as que os filtros entendem), com a grafia oficial.
         $known = collect(array_keys(JobClassifier::TECHS))->keyBy(fn ($t) => Str::lower($t));
@@ -107,7 +98,9 @@ class AdminController extends Controller
 
     public function toggleAdmin(Request $request, User $user): RedirectResponse
     {
-        abort_if($user->is($request->user()), 422, 'Você não pode tirar o seu próprio acesso.');
+        if ($user->is($request->user())) {
+            return back()->withErrors(['user' => 'Você não pode tirar o seu próprio acesso.']);
+        }
         $user->forceFill(['is_admin' => ! $user->is_admin])->save();
 
         return back()->with('status', $user->is_admin ? "{$user->email} agora é administrador." : "{$user->email} não é mais administrador.");
@@ -115,7 +108,9 @@ class AdminController extends Controller
 
     public function destroyUser(Request $request, User $user): RedirectResponse
     {
-        abort_if($user->is($request->user()), 422, 'Para apagar a sua conta, use Minha conta.');
+        if ($user->is($request->user())) {
+            return back()->withErrors(['user' => 'Para apagar a sua conta, use Minha conta.']);
+        }
         $user->delete();
 
         return back()->with('status', 'Conta apagada (com currículos, candidaturas, alertas e acessos de IA).');

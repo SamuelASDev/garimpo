@@ -16,6 +16,11 @@ class SecurityHeaders
     {
         $response = $next($request);
 
+        // Não anuncia a versão do PHP (expose_php da hospedagem).
+        if (! headers_sent()) {
+            header_remove('X-Powered-By');
+        }
+
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');

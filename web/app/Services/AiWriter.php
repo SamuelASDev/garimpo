@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\JobPosting;
 use App\Models\Resume;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 /**
@@ -153,10 +154,14 @@ class AiWriter
                 if (is_array($data) && array_key_exists($requiredKey, $data)) {
                     return ['data' => $masker->unmask($data), 'provider' => $provider];
                 }
+                Log::warning("IA grátis: $provider respondeu fora do formato esperado", ['campo' => $requiredKey]);
             } catch (\Throwable $e) {
-                report($e);
+                // Só o motivo (status/mensagem curta): o texto do currículo não vai para o log.
+                Log::warning("IA grátis: $provider falhou", ['erro' => mb_substr($e->getMessage(), 0, 300)]);
             }
         }
+
+        Log::error('IA grátis: todos os provedores falharam', ['campo' => $requiredKey]);
 
         throw new RuntimeException('A IA grátis está indisponível agora. Tente de novo em alguns minutos ou use sua própria IA (menu "Conectar IA").');
     }

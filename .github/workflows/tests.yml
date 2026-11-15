@@ -1,0 +1,65 @@
+name: Testes
+
+# Roda os testes a cada push e pull request: erro aparece aqui antes de ir para o servidor.
+on:
+  push:
+    branches: [main, dev]
+  pull_request: {}
+
+jobs:
+  laravel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3" # mesma versão da Hostinger
+          extensions: mbstring, pdo_sqlite, sodium, zip, xml, gd, intl
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Dependências
+        run: |
+          composer install --no-interaction --no-progress --prefer-dist
+          npm ci
+
+      - name: Build (as telas usam o manifest do Vite)
+        run: npm run build
+
+      - name: Preparar ambiente
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan passport:keys --force
+
+      - name: Testes
+        run: php artisan test --compact
+
+      - name: Falhas de segurança conhecidas nas bibliotecas
+        run: |
+          composer audit --no-dev
+          npm audit --omit=dev
+
+  collector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verificar o coletor (nomes indefinidos, erros de sintaxe)
+        run: |
+          pip install pyflakes
+          python -m pyflakes collector/*.py > pyflakes.txt || true
+          if grep -v "imported but unused" pyflakes.txt; then exit 1; fi

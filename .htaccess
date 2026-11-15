@@ -10,6 +10,9 @@
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
 
+    # Nada de dentro de web/ é acessível pela URL, só web/public (código, vendor, config ficam fora do alcance).
+    RewriteRule ^web/(?!public/) - [R=404,L]
+
     # Tudo vai para web/public; o web/public/.htaccess do Laravel cuida do resto.
     RewriteCond %{REQUEST_URI} !^/web/public/
     RewriteRule ^(.*)$ web/public/$1 [L]
@@ -24,3 +27,9 @@
 <FilesMatch "^\.(env|git|htpasswd)|\.(sqlite|key|log|md|yml|yaml|py|lock)$|^(composer|package|package-lock)\.json$|^artisan$">
     Require all denied
 </FilesMatch>
+
+# Não anuncia a versão do PHP.
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header unset X-Powered-By
+</IfModule>

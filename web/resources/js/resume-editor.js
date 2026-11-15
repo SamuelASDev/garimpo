@@ -13,8 +13,18 @@ async function postJson(url, method, body) {
         headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': csrf() },
         body: JSON.stringify(body),
     });
-    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message || 'Erro ' + res.status);
+    if (!res.ok) throw new Error(friendlyError(res.status, await res.json().catch(() => ({}))));
     return res.json();
+}
+
+/** Mensagem em português para o usuário (nunca detalhe técnico do servidor). */
+function friendlyError(status, data = {}) {
+    if (status === 419) return 'Sua sessão expirou. Recarregue a página (o que você já salvou continua lá).';
+    if (status === 401) return 'Você saiu da conta. Entre de novo para continuar.';
+    if (status === 429) return 'Muitas ações em pouco tempo. Espere um minutinho e tente de novo.';
+    if (status === 422) return Object.values(data.errors || {})[0]?.[0] || data.message || 'Confira os dados e tente de novo.';
+    if (status >= 500) return 'Tivemos um problema do nosso lado. Tente de novo em alguns instantes.';
+    return data.message || 'Não deu certo. Tente de novo.';
 }
 
 /** Lê o texto de um PDF no navegador (pdf.js), mantendo as quebras de linha. */
@@ -178,6 +188,7 @@ export function registerResumeEditor(Alpine) {
                         body: JSON.stringify({ message: text, html: editor.getHTML() }),
                     });
                     const data = await res.json().catch(() => ({}));
+                    if (!res.ok && !data.reply) throw new Error(friendlyError(res.status, data));
                     if (data.html) {
                         this.undoHtml = editor.getHTML();
                         editor.commands.setContent(data.html, { emitUpdate: true });

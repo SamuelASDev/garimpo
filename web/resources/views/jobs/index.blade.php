@@ -1,8 +1,4 @@
-@php
-    $labels = ['estagio' => 'Estágio / Trainee', 'junior' => 'Júnior', 'pleno' => 'Pleno', 'senior' => 'Sênior', 'especialista' => 'Especialista',
-        'dev' => 'Desenvolvimento', 'suporte' => 'Suporte', 'infra' => 'Infra/DevOps', 'dados' => 'Dados', 'qa' => 'QA/Testes',
-        'seguranca' => 'Segurança', 'mobile' => 'Mobile', 'design' => 'UX/UI', 'gestao' => 'Gestão/Produto'];
-@endphp
+@php($labels = \App\Services\JobClassifier::LABELS)
 <x-app-layout>
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <h1 class="text-2xl font-bold text-gray-900">Vagas de TI</h1>

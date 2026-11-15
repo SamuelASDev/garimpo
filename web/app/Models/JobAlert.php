@@ -42,9 +42,7 @@ class JobAlert extends Model
     public function describe(): string
     {
         $f = $this->filters ?? [];
-        $labels = ['estagio' => 'Estágio / Trainee', 'junior' => 'Júnior', 'pleno' => 'Pleno', 'senior' => 'Sênior', 'especialista' => 'Especialista',
-            'dev' => 'Desenvolvimento', 'suporte' => 'Suporte', 'infra' => 'Infra/DevOps', 'dados' => 'Dados', 'qa' => 'QA/Testes',
-            'seguranca' => 'Segurança', 'mobile' => 'Mobile', 'design' => 'UX/UI', 'gestao' => 'Gestão/Produto'];
+        $labels = JobClassifier::LABELS;
 
         $parts = array_filter([
             ! empty($f['q']) ? '"'.$f['q'].'"' : null,

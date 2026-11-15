@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StorePastedDescriptionRequest;
 use App\Models\JobPosting;
 use App\Models\PastedDescription;
 use App\Services\ContactMasker;
@@ -14,12 +15,9 @@ use Illuminate\Http\Request;
  */
 class PastedDescriptionController extends Controller
 {
-    public function store(Request $request, JobPosting $job): RedirectResponse
+    public function store(StorePastedDescriptionRequest $request, JobPosting $job): RedirectResponse
     {
-        $data = $request->validate(
-            ['description' => ['required', 'string', 'min:200', 'max:30000']],
-            ['description.min' => 'Cole a descrição completa da vaga (pelo menos 200 caracteres).'],
-        );
+        $data = $request->validated();
 
         PastedDescription::updateOrCreate(
             ['user_id' => $request->user()->id, 'job_posting_id' => $job->id],

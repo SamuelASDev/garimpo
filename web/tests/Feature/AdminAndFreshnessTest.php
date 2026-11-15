@@ -107,6 +107,17 @@ class AdminAndFreshnessTest extends TestCase
             ->assertSee('Senioridade não identificada');
     }
 
+    public function test_errors_are_friendly_and_in_portuguese(): void
+    {
+        $this->get('/vagas/999999')->assertNotFound()->assertSee('Página não encontrada')->assertDontSee('Illuminate');
+        $this->post(route('register'), ['email' => 'nao-e-email'])->assertSessionHasErrors(['email' => 'Informe um e-mail válido.']);
+
+        $admin = User::factory()->create();
+        $admin->forceFill(['is_admin' => true])->save();
+        $this->actingAs($admin)->patch(route('admin.users.admin', $admin))->assertSessionHasErrors('user');
+        $this->assertTrue($admin->fresh()->is_admin);
+    }
+
     public function test_stats_page_shows_charts(): void
     {
         JobPosting::create(['source' => 'gupy', 'url' => 'https://x.test/1', 'fingerprint' => 'a', 'title' => 'Dev', 'techs' => ['PHP'], 'seniority' => 'junior', 'posted_at' => now()]);
