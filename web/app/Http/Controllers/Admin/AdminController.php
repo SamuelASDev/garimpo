@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\UpdateJobPostingRequest;
 use App\Models\JobPosting;
 use App\Models\User;
 use App\Services\JobClassifier;
+use App\Services\Locations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -57,6 +58,7 @@ class AdminController extends Controller
             ...$data,
             'techs' => $techs,
             'remote' => ($data['work_mode'] ?? null) === 'remoto',
+            ...Locations::parse($data['location'] ?? null),
             'description' => (string) $data['description'],
             'summary' => Str::limit(preg_replace('/\s+/', ' ', (string) $data['description']), 280),
         ]);

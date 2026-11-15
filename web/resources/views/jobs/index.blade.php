@@ -6,7 +6,7 @@
 
         <form method="GET" class="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 bg-white p-4 rounded-xl border border-gray-200">
             <input name="q" value="{{ $filters['q'] ?? '' }}" placeholder="Cargo ou empresa" class="sm:col-span-2 rounded-lg border-gray-300 text-sm">
-            <input name="city" value="{{ $filters['city'] ?? '' }}" placeholder="📍 Cidade ou estado" class="rounded-lg border-gray-300 text-sm">
+            <x-city-picker :city="$filters['city'] ?? null" :state="$filters['state'] ?? null" />
             <select name="seniority" class="rounded-lg border-gray-300 text-sm">
                 <option value="">Senioridade</option>
                 @foreach ($seniorities as $s)
@@ -70,7 +70,7 @@
             @forelse ($jobs as $job)
                 <a href="{{ route('jobs.show', $job) }}" class="block bg-white rounded-xl border border-gray-200 p-5 hover:border-emerald-400 transition">
                     <h2 class="font-semibold text-gray-900">{{ $job->title }}</h2>
-                    <p class="text-sm text-gray-500">{{ $job->company ?? 'Empresa não informada' }} · 📍 {{ $job->location ?: ($job->work_mode === 'remoto' ? 'Qualquer lugar' : 'Local não informado') }}</p>
+                    <p class="text-sm text-gray-500">{{ $job->company ?? 'Empresa não informada' }} · 📍 {{ ($job->city ? $job->city.($job->state ? ' — '.$job->state : '') : $job->location) ?: ($job->work_mode === 'remoto' ? 'Qualquer lugar' : 'Local não informado') }}</p>
                     <x-job-badges :job="$job" class="mt-3" />
                     @if ($job->techs)
                         <div class="mt-3 flex flex-wrap gap-1.5">

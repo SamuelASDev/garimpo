@@ -11,7 +11,7 @@
         <div class="mt-4 grid lg:grid-cols-[1fr_340px] gap-6 items-start">
             <article class="bg-white rounded-xl border border-gray-200 p-6 min-w-0">
                 <h1 class="text-2xl font-bold text-gray-900">{{ $job->title }}</h1>
-                <p class="text-gray-500 mt-1">{{ $job->company ?? 'Empresa não informada' }} · 📍 {{ $job->location ?: ($job->work_mode === 'remoto' ? 'Qualquer lugar' : 'Local não informado') }} · {{ ucfirst($job->source) }}@if ($job->posted_at) · publicada em {{ $job->posted_at->format('d/m/Y') }}@endif</p>
+                <p class="text-gray-500 mt-1">{{ $job->company ?? 'Empresa não informada' }} · 📍 {{ ($job->city ? $job->city.($job->state ? ' — '.$job->state : '') : $job->location) ?: ($job->work_mode === 'remoto' ? 'Qualquer lugar' : 'Local não informado') }} · {{ ucfirst($job->source) }}@if ($job->posted_at) · publicada em {{ $job->posted_at->format('d/m/Y') }}@endif</p>
                 <x-job-badges :job="$job" class="mt-3" />
                 @foreach (['Tecnologias' => ['techs', 'bg-gray-100 text-gray-700'], 'Competências pedidas' => ['skills', 'bg-sky-50 text-sky-700'], 'Comportamental' => ['soft_skills', 'bg-violet-50 text-violet-700']] as $label => [$field, $classes])
                     @if ($job->$field)

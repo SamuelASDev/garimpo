@@ -25,6 +25,7 @@ class StoreJobAlertRequest extends FormRequest
             'remote' => ['nullable'],
             'mode' => ['nullable', 'string'],
             'city' => ['nullable', 'string', 'max:60'],
+            'state' => ['nullable', 'string', 'size:2'],
         ];
     }
 }

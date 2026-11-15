@@ -19,7 +19,7 @@ class JobController extends Controller
 {
     public function index(Request $request, AtsMatcher $matcher): View
     {
-        $filters = $request->only(['q', 'seniority', 'area', 'tech', 'remote', 'mode', 'city']);
+        $filters = $request->only(['q', 'seniority', 'area', 'tech', 'remote', 'mode', 'city', 'state']);
         $jobs = JobPosting::filter($filters)->latest('posted_at')->paginate(20)->withQueryString();
 
         // % de compatibilidade de cada vaga com o currículo do usuário (mesma conta do ATS).

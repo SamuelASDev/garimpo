@@ -18,7 +18,7 @@ class StatsController extends Controller
     public function __invoke(Request $request): View
     {
         $days = array_key_exists((int) $request->days, self::PERIODS) ? (int) $request->days : 30;
-        $filters = $request->only(['seniority', 'area', 'tech', 'remote', 'mode', 'city']);
+        $filters = $request->only(['seniority', 'area', 'tech', 'remote', 'mode', 'city', 'state']);
 
         $jobs = JobPosting::filter($filters)
             ->where('posted_at', '>=', now()->subDays($days)->startOfDay())

@@ -38,7 +38,7 @@
                     <option value="{{ $value }}" @selected(($filters['mode'] ?? '') === $value)>{{ $text }}</option>
                 @endforeach
             </select>
-            <input name="city" value="{{ $filters['city'] ?? '' }}" placeholder="Cidade ou estado" class="rounded-lg border-gray-300 text-sm">
+            <x-city-picker :city="$filters['city'] ?? null" :state="$filters['state'] ?? null" />
             <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700">Aplicar</button>
         </form>
 

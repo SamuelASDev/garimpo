@@ -105,6 +105,7 @@ class JobIngestor
                 'title' => Str::limit($item['title'], 250, ''),
                 'company' => $item['company'] ?? null,
                 'location' => $item['location'] ?? null,
+                ...Locations::parse($item['location'] ?? null),
                 ...$this->workMode($item, $description),
                 'summary' => Str::limit(preg_replace('/\s+/', ' ', $description), 280),
                 'description' => $description,

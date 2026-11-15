@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Services\JobClassifier;
 use App\Services\JobIngestor;
+use App\Services\Locations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -59,7 +60,7 @@ class JobPosting extends Model
     }
 
     /**
-     * Aplica filtros vindos da querystring (q, seniority, area, tech, mode, city; remote = mode remoto).
+     * Aplica filtros vindos da querystring (q, seniority, area, tech, mode, city, state; remote = mode remoto).
      * "tech" pode ser uma tecnologia ou uma lista: a vaga precisa ter TODAS as marcadas.
      */
     public function scopeFilter(Builder $query, array $f): Builder
@@ -76,6 +77,7 @@ class JobPosting extends Model
             ->when($f['area'] ?? null, fn ($q, $v) => $q->where('area', $v))
             ->when($f['remote'] ?? null, fn ($q) => $q->where('remote', true))
             ->when(array_key_exists($f['mode'] ?? '', JobClassifier::WORK_MODES) ? $f['mode'] : null, fn ($q, $v) => $q->where('work_mode', $v))
-            ->when(is_string($f['city'] ?? null) && trim($f['city']) !== '' ? trim($f['city']) : null, fn ($q, $v) => $q->where('location', 'like', '%'.$v.'%'));
+            ->when(is_string($f['city'] ?? null) && trim($f['city']) !== '' ? Locations::key($f['city']) : null, fn ($q, $v) => $q->where('city_key', 'like', $v.'%'))
+            ->when(is_string($f['state'] ?? null) && isset(Locations::STATES[strtoupper($f['state'])]) ? strtoupper($f['state']) : null, fn ($q, $v) => $q->where('state', $v));
     }
 }

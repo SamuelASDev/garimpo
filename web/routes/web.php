@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\AiConnectionController;
+use App\Http\Controllers\CityController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\JobAlertController;
 use App\Http\Controllers\JobApplicationController;
@@ -19,6 +20,7 @@ Route::get('/', [JobController::class, 'index'])->name('jobs.index');
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
 Route::get('/privacidade', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/estatisticas', StatsController::class)->name('stats');
+Route::get('/cidades', CityController::class)->middleware('throttle:60,1')->name('cities');
 Route::get('/termos', [LegalController::class, 'terms'])->name('legal.terms');
 Route::get('/alertas/parar/{user}', [JobAlertController::class, 'unsubscribe'])->middleware('signed')->name('alerts.unsubscribe');
 

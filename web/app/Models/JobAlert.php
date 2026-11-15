@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\JobClassifier;
+use App\Services\Locations;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,6 +53,7 @@ class JobAlert extends Model
             ! empty($f['remote']) ? 'Remoto' : null,
             JobClassifier::WORK_MODES[$f['mode'] ?? ''] ?? null,
             ! empty($f['city']) ? 'em '.$f['city'] : null,
+            ! empty($f['state']) ? 'estado: '.$f['state'] : null,
         ]);
 
         return $parts ? implode(' · ', $parts) : 'Todas as vagas de TI';
@@ -68,6 +70,7 @@ class JobAlert extends Model
             'remote' => ! empty($input['remote']) ? true : null,
             'mode' => array_key_exists($input['mode'] ?? '', JobClassifier::WORK_MODES) ? $input['mode'] : null,
             'city' => isset($input['city']) ? mb_substr(trim((string) $input['city']), 0, 60) : null,
+            'state' => isset(Locations::STATES[strtoupper((string) ($input['state'] ?? ''))]) ? strtoupper($input['state']) : null,
         ], fn ($v) => $v !== null && $v !== '');
     }
 }
