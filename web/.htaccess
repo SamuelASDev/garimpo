@@ -1,3 +1,0 @@
-# Nada desta pasta é público: código, vendor, config, storage. Só web/public (que libera a si mesma) é servida.
-# Segunda barreira caso a hospedagem não aplique o RewriteRule do .htaccess da raiz (ex.: LiteSpeed).
-Require all denied
