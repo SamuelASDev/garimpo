@@ -1,3 +1,6 @@
+# Esta é a única pasta pública do projeto (a web/.htaccess bloqueia o resto de web/).
+Require all granted
+
 # Módulos JavaScript (.mjs, ex.: leitor de PDF) precisam ir como JavaScript, senão o navegador recusa.
 <IfModule mod_mime.c>
     AddType text/javascript .mjs
