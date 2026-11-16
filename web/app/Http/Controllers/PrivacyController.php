@@ -52,6 +52,14 @@ class PrivacyController extends Controller
                     'gerado_por' => $t->generated_by,
                     'atualizado_em' => $t->updated_at?->toIso8601String(),
                 ]),
+            'variacoes_de_curriculo' => $user->resumeVariants()->get()->map(fn ($v): array => [
+                'nome' => $v->name,
+                'categoria' => $v->category,
+                'descricao' => $v->description,
+                'texto' => (new Resume(['html' => $v->html]))->plainText(),
+                'html' => $v->html,
+                'atualizado_em' => $v->updated_at?->toIso8601String(),
+            ]),
             'candidaturas' => $user->jobApplications()->get(['title', 'company', 'url', 'status', 'applied_at', 'last_contact_at', 'next_step', 'notes']),
             'conexoes_de_ia' => $user->tokens()->with('client:id,name')->get()->map(fn ($t): array => [
                 'nome' => $t->name,
@@ -63,7 +71,7 @@ class PrivacyController extends Controller
         ];
 
         return response()->streamDownload(
-            fn () => print(json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
+            fn () => print (json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
             'meus-dados-garimpo.json',
             ['Content-Type' => 'application/json; charset=utf-8'],
         );

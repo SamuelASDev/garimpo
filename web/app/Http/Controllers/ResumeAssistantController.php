@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\JobPosting;
 use App\Models\Resume;
 use App\Models\ResumeTailoring;
+use App\Models\ResumeVariant;
 use App\Services\AiWriter;
 use App\Services\ResumeTemplate;
 use Illuminate\Http\JsonResponse;
@@ -90,6 +91,51 @@ class ResumeAssistantController extends Controller
         $tailoring->update(['recommendations' => ResumeTemplate::recommendations($result['data']['recomendacoes'] ?? [])]);
 
         return response()->json(['recommendations' => $tailoring->recommendations]);
+    }
+
+    /** Chat no editor de uma variação: a IA sabe qual é o foco dela. */
+    public function variantChat(Request $request, ResumeVariant $variant, AiWriter $writer): JsonResponse
+    {
+        abort_unless($variant->user_id === $request->user()->id, 404);
+        $data = $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+            'html' => ['required', 'string', 'max:200000'],
+        ]);
+        if ($limit = $this->limitReached($request)) {
+            return $limit;
+        }
+
+        try {
+            $result = $writer->assistant($data['html'], $data['message'], $variant->asTarget());
+        } catch (\RuntimeException $e) {
+            return response()->json(['reply' => $e->getMessage(), 'html' => null], 503);
+        }
+
+        $html = $result['data']['html'] ?? null;
+
+        return response()->json([
+            'reply' => (string) ($result['data']['resposta'] ?? 'Pronto!'),
+            'html' => is_string($html) && trim($html) !== '' ? ResumeTemplate::sanitize($html) : null,
+        ]);
+    }
+
+    /** Sugestões para uma variação: compara com o foco (nome, categoria e descrição) que a pessoa deu. */
+    public function variantSuggestions(Request $request, ResumeVariant $variant, AiWriter $writer): JsonResponse
+    {
+        abort_unless($variant->user_id === $request->user()->id, 404);
+        if ($limit = $this->limitReached($request)) {
+            return $limit;
+        }
+
+        try {
+            $result = $writer->suggestForJob(new Resume(['html' => $variant->html]), $variant->asTarget(), $this->pages($request));
+        } catch (\RuntimeException $e) {
+            return response()->json(['message' => $e->getMessage()], 503);
+        }
+
+        $variant->update(['recommendations' => ResumeTemplate::recommendations($result['data']['recomendacoes'] ?? [])]);
+
+        return response()->json(['recommendations' => $variant->recommendations]);
     }
 
     /** Páginas que o currículo ocupa no editor (1 a 5). */

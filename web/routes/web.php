@@ -14,6 +14,7 @@ use App\Http\Controllers\PrivacyController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ResumeAssistantController;
 use App\Http\Controllers\ResumeController;
+use App\Http\Controllers\ResumeVariantController;
 use App\Http\Controllers\StatsController;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +35,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/curriculo', [ResumeController::class, 'edit'])->name('resume.edit');
     Route::put('/curriculo', [ResumeController::class, 'update'])->name('resume.update');
     Route::post('/curriculo/importar', [ResumeController::class, 'import'])->middleware('throttle:10,1')->name('resume.import');
+    Route::post('/curriculos/variacoes', [ResumeVariantController::class, 'store'])->middleware('throttle:20,1')->name('variants.store');
+    Route::get('/curriculos/variacoes/{variant}', [ResumeVariantController::class, 'edit'])->name('variants.edit');
+    Route::put('/curriculos/variacoes/{variant}', [ResumeVariantController::class, 'update'])->name('variants.update');
+    Route::patch('/curriculos/variacoes/{variant}', [ResumeVariantController::class, 'details'])->name('variants.details');
+    Route::delete('/curriculos/variacoes/{variant}', [ResumeVariantController::class, 'destroy'])->name('variants.destroy');
+    Route::post('/curriculos/variacoes/{variant}/sugestoes', [ResumeAssistantController::class, 'variantSuggestions'])->middleware('throttle:10,1')->name('variants.suggestions');
+    Route::post('/curriculos/variacoes/{variant}/assistente', [ResumeAssistantController::class, 'variantChat'])->middleware('throttle:20,1')->name('variants.assistant');
     Route::post('/exportar/word', [ExportController::class, 'word'])->middleware('throttle:20,1')->name('export.word');
     Route::post('/exportar/pdf', [ExportController::class, 'pdf'])->middleware('throttle:20,1')->name('export.pdf');
     Route::post('/vagas/{job}/adaptar', [JobController::class, 'tailor'])->name('jobs.tailor');

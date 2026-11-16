@@ -31,6 +31,8 @@ class ResumeController extends Controller
             'resume' => $user->resume,
             'mainPending' => $user->resume?->html ? count(ResumeTemplate::placeholders($user->resume->html)) : 0,
             'tailorings' => $tailorings,
+            'variants' => $user->resumeVariants()->latest('updated_at')->get(),
+            'categories' => ResumeVariantController::CATEGORIES,
         ]);
     }
 
