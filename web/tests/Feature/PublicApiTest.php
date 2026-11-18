@@ -6,6 +6,7 @@ use App\Models\ApiKey;
 use App\Models\JobPosting;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class PublicApiTest extends TestCase
@@ -104,12 +105,52 @@ class PublicApiTest extends TestCase
         $this->getJson('/api/v1/vagas', ['Authorization' => 'Bearer '.$plain])->assertUnauthorized();
     }
 
-    public function test_dev_page_shows_the_docs_to_everyone_and_old_addresses_redirect(): void
+    public function test_dev_page_requires_login_and_old_addresses_redirect(): void
     {
-        $this->get(route('dev'))->assertOk()->assertSee('/api/v1/vagas')->assertSee('Entre');
+        $this->get(route('dev'))->assertRedirect(route('login'));
         $this->get('/api')->assertRedirect('/dev#api');
         $this->get('/conectar-ia')->assertRedirect('/dev');
 
-        $this->actingAs(User::factory()->create())->get(route('dev'))->assertOk()->assertSee('Conectar minha IA')->assertSee('Criar chave');
+        $this->actingAs(User::factory()->create())->get(route('dev'))->assertOk()
+            ->assertSee('Conectar minha IA')->assertSee('Criar chave')->assertSee('/api/v1/vagas');
+    }
+
+    public function test_only_one_key_at_a_time_new_one_replaces_the_old(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)->post(route('dev.keys.store'), ['name' => 'Primeira']);
+        $first = session('api_key_plain');
+        $this->actingAs($user)->post(route('dev.keys.store'), ['name' => 'Segunda']);
+        $second = session('api_key_plain');
+
+        $this->assertSame(1, $user->apiKeys()->count());
+        $this->getJson('/api/v1/vagas', ['Authorization' => 'Bearer '.$first])->assertUnauthorized();
+        $this->getJson('/api/v1/vagas', ['Authorization' => 'Bearer '.$second])->assertOk();
+    }
+
+    public function test_invalid_keys_are_also_limited_per_ip(): void
+    {
+        for ($i = 0; $i < 120; $i++) {
+            $this->getJson('/api/v1/vagas', ['Authorization' => 'Bearer gp_falsa'.$i])->assertUnauthorized();
+        }
+
+        $this->getJson('/api/v1/vagas', ['Authorization' => 'Bearer gp_falsa_outra'])->assertTooManyRequests();
+    }
+
+    public function test_daily_cleanup_removes_jobs_older_than_60_days_and_expired_cache(): void
+    {
+        config(['cache.default' => 'database']);
+        $old = $this->job(['title' => 'Velha', 'posted_at' => now()->subDays(61)]);
+        $recent = $this->job(['title' => 'Recente', 'posted_at' => now()->subDays(10)]);
+        DB::table('cache')->insert([
+            ['key' => 'vencido', 'value' => 'x', 'expiration' => now()->subMinute()->getTimestamp()],
+            ['key' => 'valido', 'value' => 'x', 'expiration' => now()->addHour()->getTimestamp()],
+        ]);
+
+        $this->artisan('garimpo:limpar')->assertSuccessful();
+
+        $this->assertModelMissing($old);
+        $this->assertModelExists($recent);
+        $this->assertSame(['valido'], DB::table('cache')->pluck('key')->all());
     }
 }

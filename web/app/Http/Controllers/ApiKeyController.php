@@ -6,7 +6,7 @@ use App\Models\ApiKey;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
-/** Chaves da API pública em "Minha conta": criar (mostrada uma vez só) e revogar. */
+/** Chave da API na página Dev: uma por conta. Gerar outra substitui a atual (mostrada uma vez só). */
 class ApiKeyController extends Controller
 {
     public function store(Request $request): RedirectResponse
@@ -14,13 +14,12 @@ class ApiKeyController extends Controller
         $data = $request->validateWithBag('apiKey', ['name' => ['required', 'string', 'max:60']]);
         $user = $request->user();
 
-        if ($user->apiKeys()->count() >= ApiKey::MAX_PER_USER) {
-            return redirect(route('dev').'#chaves-api')->with('api_error', 'Você já tem '.ApiKey::MAX_PER_USER.' chaves. Revogue uma para criar outra.');
-        }
+        $replaced = $user->apiKeys()->exists();
+        $user->apiKeys()->delete(); // uma chave por vez: a anterior para de funcionar na hora
 
         [, $plain] = ApiKey::generateFor($user, $data['name']);
 
-        return redirect(route('dev').'#chaves-api')->with('api_key_plain', $plain);
+        return redirect(route('dev').'#chaves-api')->with(['api_key_plain' => $plain, 'api_status' => $replaced ? 'Chave nova gerada. A anterior parou de funcionar.' : null]);
     }
 
     public function destroy(Request $request, ApiKey $apiKey): RedirectResponse

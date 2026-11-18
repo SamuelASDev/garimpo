@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Mcp\Servers\GarimpoServer;
+use App\Mcp\Tools\GetResume;
+use App\Mcp\Tools\ListResumes;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -80,5 +83,19 @@ class ResumeVariantTest extends TestCase
 
         $this->actingAs($user)->post(route('variants.store'), ['name' => 'Mais uma', 'base' => 'modelo'])->assertSessionHas('error');
         $this->assertSame(20, $user->resumeVariants()->count());
+    }
+
+    public function test_connected_ai_lists_and_reads_variants(): void
+    {
+        $user = User::factory()->create();
+        $variant = $user->resumeVariants()->create(['name' => 'Back-end PHP', 'category' => 'Back-end', 'html' => '<p>Laravel e APIs</p>']);
+        $other = User::factory()->create()->resumeVariants()->create(['name' => 'Alheia', 'html' => '<p>secreto</p>']);
+
+        GarimpoServer::actingAs($user)->tool(ListResumes::class)
+            ->assertOk()->assertSee('Back-end PHP');
+        GarimpoServer::actingAs($user)->tool(GetResume::class, ['variant_id' => $variant->id])
+            ->assertOk()->assertSee('Laravel e APIs');
+        GarimpoServer::actingAs($user)->tool(GetResume::class, ['variant_id' => $other->id])
+            ->assertHasErrors();
     }
 }

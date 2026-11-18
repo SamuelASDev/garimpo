@@ -73,7 +73,7 @@
                 </div>
             </form>
 
-            <div class="mt-3 grid sm:grid-cols-2 gap-3">
+            <div class="mt-3 grid sm:grid-cols-2 gap-3 [&>*]:min-w-0">
                 @forelse ($variants as $variant)
                     <div class="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-400 transition flex flex-col">
                         <a href="{{ route('variants.edit', $variant) }}" class="flex-1 min-w-0">
@@ -108,11 +108,11 @@
             <a href="{{ route('jobs.index') }}" class="text-sm text-emerald-700 hover:underline">+ Gerar para outra vaga</a>
         </div>
 
-        <div class="mt-3 grid sm:grid-cols-2 gap-3">
+        <div class="mt-3 grid sm:grid-cols-2 gap-3 [&>*]:min-w-0">
             @forelse ($tailorings as $item)
                 @php($s = $item['score'])
                 <div class="bg-white rounded-xl border border-gray-200 p-4 hover:border-emerald-400 transition flex flex-col">
-                    <a href="{{ route('jobs.resume', $item['job']) }}" class="flex items-start gap-3 flex-1">
+                    <a href="{{ route('jobs.resume', $item['job']) }}" class="flex items-start gap-3 flex-1 min-w-0">
                         <span @class(['shrink-0 grid place-items-center w-12 h-12 rounded-full text-sm font-bold',
                             'bg-emerald-100 text-emerald-700' => $s >= 70, 'bg-amber-100 text-amber-700' => $s >= 40 && $s < 70, 'bg-red-100 text-red-700' => $s < 40])>{{ $s }}%</span>
                         <span class="min-w-0">

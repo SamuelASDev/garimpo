@@ -22,7 +22,7 @@
 
 <h3 class="mt-8 text-lg font-semibold text-gray-900">1. Crie sua chave</h3>
 <p class="mt-2 text-sm text-gray-600">
-    Em <a href="#chaves-api" class="text-emerald-700 underline">Chaves da API</a>, aqui em cima. A chave aparece uma vez só:
+    Em <a href="#chaves-api" class="text-emerald-700 underline">Chave da API</a>, aqui em cima (uma por conta). A chave aparece uma vez só:
     guarde em lugar seguro e use apenas no servidor (nunca no JavaScript do navegador).
 </p>
 
@@ -89,7 +89,7 @@
 <ul class="mt-3 space-y-2 text-sm text-gray-600">
     <li><code class="font-mono text-gray-900">401</code> chave ausente, errada ou revogada.</li>
     <li><code class="font-mono text-gray-900">422</code> filtro inválido (a resposta diz qual).</li>
-    <li><code class="font-mono text-gray-900">429</code> passou do limite: espere os segundos do cabeçalho <code>Retry-After</code>. Os cabeçalhos <code>X-RateLimit-Remaining</code> mostram quanto ainda resta.</li>
+    <li><code class="font-mono text-gray-900">429</code> passou do limite (60 por minuto e 5.000 por dia por chave; 120 por minuto por IP): espere os segundos do cabeçalho <code>Retry-After</code>. Os cabeçalhos <code>X-RateLimit-Remaining</code> mostram quanto ainda resta.</li>
 </ul>
 
 <h3 class="mt-8 text-lg font-semibold text-gray-900">Regras de uso</h3>
@@ -97,6 +97,6 @@
     <li>Sempre mostre o link <code>url_original</code>: a vaga pertence ao site de origem, é lá que a pessoa se candidata.</li>
     <li>Cite a fonte: "vagas via <a href="{{ route('home') }}" class="text-emerald-700 underline">Garimpo</a>".</li>
     <li>A descrição completa não vem pela API (é conteúdo do site de origem); o <code>resumo</code> traz só o começo.</li>
-    <li>Não tente burlar os limites com várias contas. Chaves usadas para abuso são revogadas.</li>
+    <li>Uma chave por conta. Não tente burlar os limites com várias contas: chaves usadas para abuso são revogadas.</li>
     <li>Para sincronizar, use <code>desde</code> com a data da sua última chamada em vez de baixar tudo de novo.</li>
 </ul>

@@ -10,13 +10,21 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Retorna o texto do currículo principal do usuário, ou do currículo adaptado de uma vaga (job_id). Para alterar: save-resume (principal) ou save-tailored-resume (vaga).')]
+#[Description('Retorna o texto do currículo principal do usuário, do currículo adaptado de uma vaga (job_id) ou de uma variação (variant_id, veja list-resumes). Para alterar: save-resume (principal) ou save-tailored-resume (vaga); variações o usuário edita no site.')]
 class GetResume extends Tool
 {
     public function handle(Request $request): Response
     {
-        $data = $request->validate(['job_id' => ['nullable', 'integer']]);
+        $data = $request->validate(['job_id' => ['nullable', 'integer'], 'variant_id' => ['nullable', 'integer']]);
         $user = $request->user();
+
+        if ($data['variant_id'] ?? null) {
+            $variant = $user->resumeVariants()->find($data['variant_id']);
+
+            return $variant
+                ? Response::text("Variação: {$variant->name}".($variant->category ? " ({$variant->category})" : '').($variant->description ? "\nFoco: {$variant->description}" : '')."\n\n".(new Resume(['html' => $variant->html]))->plainText())
+                : Response::error('Variação não encontrada. Veja as variações em list-resumes.');
+        }
 
         if ($data['job_id'] ?? null) {
             $tailoring = ResumeTailoring::where('user_id', $user->id)->where('job_posting_id', $data['job_id'])->first();
@@ -33,6 +41,9 @@ class GetResume extends Tool
 
     public function schema(JsonSchema $schema): array
     {
-        return ['job_id' => $schema->integer()->description('Opcional: ID da vaga para ler o currículo adaptado')];
+        return [
+            'job_id' => $schema->integer()->description('Opcional: ID da vaga para ler o currículo adaptado'),
+            'variant_id' => $schema->integer()->description('Opcional: ID da variação (de list-resumes) para ler'),
+        ];
     }
 }

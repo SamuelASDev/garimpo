@@ -20,7 +20,7 @@ Projeto open source (licença MIT), feito em Laravel + um coletor em Python.
 - [Testes](#testes)
 - [Publicar na Hostinger (ou outra hospedagem compartilhada)](#publicar-na-hostinger-ou-outra-hospedagem-compartilhada)
 - [Coleta automática (GitHub Actions)](#coleta-automática-github-actions)
-- [Conectar a própria IA (MCP)](#conectar-a-própria-ia-mcp)
+- [Página Dev: IA conectada (MCP) e API pública](#página-dev-ia-conectada-mcp-e-api-pública)
 - [Atualizar o site depois](#atualizar-o-site-depois)
 - [Privacidade (LGPD) e segurança](#privacidade-lgpd-e-segurança)
 - [Problemas comuns](#problemas-comuns)
@@ -39,9 +39,13 @@ Projeto open source (licença MIT), feito em Laravel + um coletor em Python.
 - 📝 **Editor de currículo estilo Word**, num modelo ATS de uma coluna: importa PDF, exporta PDF e Word.
 - ✨ **Currículo por vaga**: a IA adapta o seu currículo principal para a vaga, marca em amarelo o que falta e
   sugere o que remover, ajustar ou adicionar. Tem também um chat que edita o documento por você.
+- 🗂️ **Variações de currículo**: versões do seu currículo para um foco (uma stack, uma área, estágio…), com nome,
+  categoria e descrição, sem depender de vaga. A IA usa o foco da variação nas sugestões.
+- 📊 **Estatísticas públicas**: stacks, tecnologias, senioridades e quem mais anuncia, por período.
 - 📋 **Controle de candidaturas** com status e alerta de follow-up (15 e 30 dias sem retorno).
 - 🔔 **Alertas por e-mail**: monte filtros e receba as vagas novas no máximo 1 vez por dia.
-- 🤖 **Conectar a própria IA** (Claude, ChatGPT, Codex, Cursor) por MCP, com login OAuth.
+- 🤖 **Página Dev**: conectar a própria IA (Claude, ChatGPT, Codex, Cursor) por MCP com login OAuth, e a
+  **API pública de vagas** (JSON, somente leitura) com chave por conta.
 - 🔒 **LGPD**: consentimento para IA, contatos mascarados antes de ir para a IA, exportar e apagar seus dados.
 
 ## Como funciona por dentro
@@ -274,7 +278,9 @@ hPanel → Avançado → **Cron** → novo job **a cada minuto**:
 cd /home/SEU_USUARIO/domains/seudominio.com.br/public_html/garimpo/web && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-É ele que dispara o resumo diário dos alertas (8h de Brasília).
+É ele que dispara o resumo diário dos alertas (8h de Brasília), a coleta a cada 4h (veja abaixo) e a
+**limpeza diária** (3h30): apaga as vagas publicadas há mais de 60 dias (`GARIMPO_RETENTION_DAYS`) e o cache
+vencido. Para rodar na mão: `php artisan garimpo:limpar`.
 
 ### 7. E-mail (alertas e confirmação de conta)
 
@@ -321,14 +327,32 @@ Enquanto os secrets do GitHub não existem, o coletor termina sem fazer nada (n�
 edite o `cron` de `garimpo:coletar` em `web/routes/console.php` (acima de 4 em 4 horas não é recomendado: os sites podem bloquear).
 O token vence na data escolhida: renove antes e atualize o `.env`.
 
-## Conectar a própria IA (MCP)
+## Página Dev: IA conectada (MCP) e API pública
 
-Em **Conectar IA**, dentro do site, a pessoa conecta Claude.ai, ChatGPT, Claude Code, Codex ou Cursor ao endereço
+Fica em **`/dev`** (menu **Dev**, só com login). Os endereços antigos `/conectar-ia` e `/api` levam para lá.
+
+**Conectar a própria IA.** A pessoa conecta Claude.ai, ChatGPT, Claude Code, Codex ou Cursor ao endereço
 `https://seu-site/mcp`. O login é por **OAuth** (abre a tela "Autorizar" do Garimpo) ou por **token** com validade
-escolhida (1 semana a 1 ano). Cada conexão pode ser desconectada sozinha.
+escolhida (1 semana a 1 ano). Cada conexão pode ser desconectada sozinha. A IA conectada busca vagas, lê a vaga com o
+score, lê e adapta currículos (principal, por vaga e variações) e gerencia candidaturas. Os domínios aceitos no login
+ficam em `web/config/mcp.php`. Claude.ai e ChatGPT só conectam com o site publicado em HTTPS.
 
-A IA conectada pode buscar vagas, ler a vaga com o score, ler e adaptar currículos e gerenciar candidaturas.
-Os domínios aceitos no login ficam em `web/config/mcp.php`. Claude.ai e ChatGPT só conectam com o site publicado em HTTPS.
+**API pública (v1).** Somente leitura, com a documentação completa na própria página Dev.
+
+| Endpoint | O que devolve |
+|---|---|
+| `GET /api/v1/vagas` | Vagas paginadas (até 50 por página), com filtros `q`, `tecnologia`, `senioridade`, `area`, `modo`, `cidade`, `uf` e `desde` |
+| `GET /api/v1/vagas/{id}` | Uma vaga |
+| `GET /api/v1/estatisticas?dias=30` | Contagens do período (7, 30 ou 90 dias) |
+
+- **Chave**: uma por conta, gerada na página Dev e enviada em `Authorization: Bearer gp_...`. Só o hash SHA-256 fica no
+  banco; gerar outra substitui a atual na hora.
+- **Limites**: 60 requisições por minuto e 5.000 por dia por chave, e 120 por minuto por IP (vale também para chave
+  inválida). Passou disso: `429` com `Retry-After`.
+- **Cache**: as consultas comuns (sem busca livre `q` e sem `desde`, até a página 5) ficam 5 minutos em cache;
+  as estatísticas, 10. Buscas livres não vão para o cache, para não encher o banco.
+- **Conteúdo**: a API entrega o que o Garimpo produz (classificação, local, tecnologias, stack) e o link do anúncio
+  original. A descrição completa é do site de origem, então vai só um resumo de até 280 caracteres.
 
 ## Atualizar o site depois
 

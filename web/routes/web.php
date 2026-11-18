@@ -21,9 +21,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/vagas', [JobController::class, 'index'])->name('jobs.index');
-// Área para desenvolvedores: conectar a IA (MCP), chaves e documentação da API. Pública (a documentação
-// vale para todos); conectar e criar chaves exige login.
-Route::get('/dev', [AiConnectionController::class, 'show'])->name('dev');
 Route::redirect('/api', '/dev#api', 301);
 Route::redirect('/conectar-ia', '/dev', 301);
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
@@ -70,6 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/candidaturas/{application}', [JobApplicationController::class, 'update'])->name('applications.update');
     Route::delete('/candidaturas/{application}', [JobApplicationController::class, 'destroy'])->name('applications.destroy');
 
+    // Área para desenvolvedores (só com login): conectar a IA (MCP), chave e documentação da API.
+    Route::get('/dev', [AiConnectionController::class, 'show'])->name('dev');
     Route::prefix('dev')->name('dev.')->group(function () {
         Route::post('/ia', [AiConnectionController::class, 'store'])->middleware('throttle:10,1')->name('ai.store');
         Route::delete('/ia', [AiConnectionController::class, 'destroy'])->name('ai.destroy');

@@ -21,6 +21,9 @@ class JobController extends Controller
 
     public const MAX_PER_PAGE = 50;
 
+    /** Páginas guardadas em cache: as primeiras, que quase todo mundo pede. */
+    public const CACHED_PAGES = 5;
+
     public function index(Request $request): JsonResponse
     {
         $params = $request->validate([
@@ -37,7 +40,7 @@ class JobController extends Controller
         ]);
         ksort($params);
 
-        $body = Cache::remember('api:v1:jobs:'.md5(json_encode($params)), self::CACHE_SECONDS, function () use ($params, $request): array {
+        $build = function () use ($params): array {
             $jobs = JobPosting::filter([
                 'q' => $params['q'] ?? null,
                 'seniority' => $params['senioridade'] ?? null,
@@ -49,12 +52,16 @@ class JobController extends Controller
             ])
                 ->when($params['desde'] ?? null, fn ($q, $since) => $q->where('created_at', '>=', $since))
                 ->latest('posted_at')->latest('id')
-                ->paginate($params['por_pagina'] ?? 20)->appends($request->except('page'));
+                ->paginate($params['por_pagina'] ?? 20)->appends(collect($params)->except('page')->all());
 
             return JobResource::collection($jobs)->response()->getData(true);
-        });
+        };
 
-        return response()->json($body)->header('Cache-Control', 'public, max-age='.self::CACHE_SECONDS);
+        // Busca livre (q) e sincronização (desde) quase nunca se repetem: guardar em cache só encheria o banco.
+        $cacheable = empty($params['q']) && empty($params['desde']) && ($params['page'] ?? 1) <= self::CACHED_PAGES;
+        $body = $cacheable ? Cache::remember('api:v1:jobs:'.md5(json_encode($params)), self::CACHE_SECONDS, $build) : $build();
+
+        return response()->json($body)->header('Cache-Control', 'private, max-age='.self::CACHE_SECONDS);
     }
 
     public function show(JobPosting $job): JsonResponse

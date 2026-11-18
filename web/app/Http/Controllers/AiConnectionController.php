@@ -32,7 +32,7 @@ class AiConnectionController extends Controller
     public function show(Request $request): View
     {
         return view('dev.index', [
-            'tokens' => $request->user()?->tokens()->with('client')->where('revoked', false)->where('expires_at', '>', now())->latest()->get() ?? collect(),
+            'tokens' => $request->user()->tokens()->with('client')->where('revoked', false)->where('expires_at', '>', now())->latest()->get(),
             'mcpUrl' => url('/mcp'),
         ]);
     }

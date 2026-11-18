@@ -64,7 +64,7 @@
                 </div>
             </div>
 
-            <div class="mt-6 grid md:grid-cols-2 gap-6">
+            <div class="mt-6 grid md:grid-cols-2 gap-6 [&>*]:min-w-0">
                 <div>
                     @include('stats._donut', ['title' => 'Stacks: o ecossistema principal de cada vaga', 'data' => $stacks])
                     <p class="mt-2 text-xs text-gray-500">Cada vaga conta uma vez só, pela stack principal (título primeiro, depois as tecnologias citadas).

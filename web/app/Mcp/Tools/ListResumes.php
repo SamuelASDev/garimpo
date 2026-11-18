@@ -9,7 +9,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Lista os currículos do usuário: o principal e os adaptados para vagas (com job_id). Use get-resume com job_id para ler um deles.')]
+#[Description('Lista os currículos do usuário: o principal, os adaptados para vagas (job_id) e as variações que ele criou para um foco, como uma stack ou área (variant_id). Use get-resume com job_id ou variant_id para ler um deles.')]
 class ListResumes extends Tool
 {
     public function handle(Request $request): Response
@@ -21,6 +21,9 @@ class ListResumes extends Tool
             'por_vaga' => ResumeTailoring::with('jobPosting:id,title,company')->where('user_id', $user->id)->latest('updated_at')->get()
                 ->filter(fn ($t) => $t->jobPosting)
                 ->map(fn ($t) => ['job_id' => $t->job_posting_id, 'vaga' => $t->jobPosting->title, 'empresa' => $t->jobPosting->company, 'atualizado_em' => $t->updated_at->toDateTimeString()])
+                ->values(),
+            'variacoes' => $user->resumeVariants()->latest('updated_at')->get()
+                ->map(fn ($v) => ['variant_id' => $v->id, 'nome' => $v->name, 'categoria' => $v->category, 'descricao' => $v->description, 'atualizado_em' => $v->updated_at->toDateTimeString()])
                 ->values(),
         ]);
     }

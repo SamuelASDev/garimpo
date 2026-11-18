@@ -11,7 +11,7 @@
             ou use as <strong>vagas no seu próprio projeto</strong> pela API.</p>
 
         <nav class="mt-5 flex flex-wrap gap-2 text-sm" aria-label="Nesta página">
-            @foreach (['#ia' => '🤖 Conectar minha IA', '#chaves-api' => '🔑 Chaves da API', '#api' => '📘 Documentação da API'] as $anchor => $label)
+            @foreach (['#ia' => '🤖 Conectar minha IA', '#chaves-api' => '🔑 Chave da API', '#api' => '📘 Documentação da API'] as $anchor => $label)
                 <a href="{{ $anchor }}" class="px-3 py-1.5 rounded-full border border-gray-300 bg-white hover:border-emerald-500 hover:text-emerald-700">{{ $label }}</a>
             @endforeach
         </nav>
@@ -29,7 +29,6 @@
                     sem o limite da IA grátis. Você escolhe quem conecta, por quanto tempo, e desconecta quando quiser.
                 </p>
             </div>
-            @auth
         {{-- Token recém-criado + instrução do app escolhido --}}
             @if ($token)
                 <div class="p-5 rounded-xl bg-amber-50 border border-amber-200 text-sm space-y-3">
@@ -138,22 +137,12 @@ codex mcp add garimpo --url {{ $mcpUrl }} --bearer-token-env-var GARIMPO_TOKEN</
                     </form>
                 @endif
             </div>
-            @else
-                <div class="bg-white rounded-xl border border-gray-200 p-6 text-sm text-gray-600">
-                    <a href="{{ route('login') }}" class="text-emerald-700 underline">Entre</a> ou <a href="{{ route('register') }}" class="text-emerald-700 underline">crie uma conta grátis</a> para conectar sua IA.
-                </div>
-            @endauth
         </section>
 
         {{-- 2. Chaves da API --}}
         <section id="chaves-api" class="mt-12 pt-10 border-t border-gray-200 scroll-mt-20">
             <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6">
-                @auth
-                    @include('dev.api-keys')
-                @else
-                    <h2 class="text-lg font-medium text-gray-900">Chaves da API</h2>
-                    <p class="mt-1 text-sm text-gray-600"><a href="{{ route('login') }}" class="text-emerald-700 underline">Entre</a> ou <a href="{{ route('register') }}" class="text-emerald-700 underline">crie uma conta grátis</a> para gerar sua chave.</p>
-                @endauth
+                @include('dev.api-keys')
             </div>
         </section>
 

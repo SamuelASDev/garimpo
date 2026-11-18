@@ -11,4 +11,7 @@ return [
     // Idade máxima das vagas aceitas na coleta (dias). A primeira coleta (banco vazio) vai mais longe.
     'max_age_days' => (int) env('GARIMPO_MAX_AGE_DAYS', 7),
     'first_max_age_days' => (int) env('GARIMPO_FIRST_MAX_AGE_DAYS', 30),
+
+    // Vagas publicadas há mais que isso (dias) são apagadas na limpeza diária.
+    'retention_days' => (int) env('GARIMPO_RETENTION_DAYS', 60),
 ];

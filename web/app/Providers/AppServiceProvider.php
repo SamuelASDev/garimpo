@@ -28,13 +28,14 @@ class AppServiceProvider extends ServiceProvider
         // Painel de administração (/admin): só quem tem is_admin (promova com php artisan garimpo:admin email).
         Gate::define('admin', fn ($user): bool => (bool) $user->is_admin);
 
-        // API pública: limite por chave (60 por minuto e 5.000 por dia); resposta 429 com Retry-After.
+        // API pública: limite por chave (60 por minuto e 5.000 por dia) e por IP (120 por minuto, inclusive com
+        // chave inválida, para ninguém ficar testando chaves); resposta 429 com Retry-After.
         RateLimiter::for('api-v1', function (Request $request): array {
             // O limite roda antes da autenticação: usa a própria chave enviada (hash) como identificador.
             $sent = (string) ($request->bearerToken() ?: $request->header('X-Api-Key'));
             $id = $sent !== '' ? hash('sha256', $sent) : $request->ip();
 
-            return [Limit::perMinute(60)->by('min:'.$id), Limit::perDay(5000)->by('dia:'.$id)];
+            return [Limit::perMinute(60)->by('min:'.$id), Limit::perDay(5000)->by('dia:'.$id), Limit::perMinute(120)->by('ip:'.$request->ip())];
         });
 
         // Senha forte em produção: 10+ caracteres, letras e números, e não pode estar em vazamentos conhecidos

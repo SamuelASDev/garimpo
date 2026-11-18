@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\JobPosting;
 use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -20,6 +23,30 @@ Schedule::command('alerts:send')->dailyAt('08:00')->timezone('America/Sao_Paulo'
 // pelo cron do servidor, ela começa na hora. Só roda com GITHUB_DISPATCH_TOKEN configurado.
 Schedule::command('garimpo:coletar')->cron('0 1,5,9,13,17,21 * * *')->timezone('America/Sao_Paulo')
     ->when(fn (): bool => (bool) config('services.github.token'));
+
+// Limpeza diária (3h30 de Brasília): vagas antigas e cache vencido (o cache no banco não se apaga sozinho).
+Schedule::command('garimpo:limpar')->dailyAt('03:30')->timezone('America/Sao_Paulo')->withoutOverlapping();
+
+Artisan::command('garimpo:limpar', function () {
+    $days = (int) config('garimpo.retention_days', 60);
+    $limit = now()->subDays($days);
+
+    // Pela data de publicação (ou de coleta, quando o site não informa). Currículos adaptados e descrições coladas
+    // dessas vagas vão junto; as candidaturas ficam (guardam título e empresa).
+    $jobs = JobPosting::where(fn ($q) => $q->where('posted_at', '<', $limit)
+        ->orWhere(fn ($w) => $w->whereNull('posted_at')->where('created_at', '<', $limit)))->delete();
+
+    $cache = 0;
+    if (config('cache.default') === 'database') {
+        $cache = DB::connection(config('cache.stores.database.connection'))
+            ->table(config('cache.stores.database.table', 'cache'))->where('expiration', '<', now()->getTimestamp())->delete();
+    }
+    if ($jobs) {
+        Cache::forget('home.numbers');
+    }
+
+    $this->info("Limpeza: {$jobs} vagas com mais de {$days} dias e {$cache} itens de cache vencidos apagados.");
+})->purpose('Apaga vagas antigas e o cache vencido');
 
 // Pede ao GitHub Actions para rodar a coleta agora: php artisan garimpo:coletar
 Artisan::command('garimpo:coletar', function () {

@@ -11,7 +11,8 @@ use Illuminate\Support\Str;
  */
 class ApiKey extends Model
 {
-    public const MAX_PER_USER = 3;
+    /** Uma chave por conta: gerar outra substitui a atual. */
+    public const MAX_PER_USER = 1;
 
     protected $fillable = ['name', 'key_hash', 'prefix', 'last_used_at'];
 

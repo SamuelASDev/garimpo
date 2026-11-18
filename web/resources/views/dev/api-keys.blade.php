@@ -1,14 +1,14 @@
 <section>
     <header>
-        <h2 class="text-lg font-medium text-gray-900">Chaves da API</h2>
+        <h2 class="text-lg font-medium text-gray-900">Chave da API</h2>
         <p class="mt-1 text-sm text-gray-600">Use as vagas do Garimpo no seu próprio projeto. Veja a <a href="#api" class="underline">documentação</a> logo abaixo.</p>
     </header>
 
     @if (session('api_key_plain'))
         <div class="mt-4 p-4 rounded-lg bg-emerald-50 border border-emerald-200 text-sm" x-data="{ copiado: false }">
             <p class="font-semibold text-emerald-900">Sua chave nova (aparece só agora: copie e guarde)</p>
-            <div class="mt-2 flex gap-2">
-                <code class="flex-1 min-w-0 truncate px-3 py-2 rounded bg-white border border-emerald-200 text-gray-900" x-ref="chave">{{ session('api_key_plain') }}</code>
+            <div class="mt-2 flex flex-col sm:flex-row gap-2">
+                <code class="flex-1 min-w-0 break-all px-3 py-2 rounded bg-white border border-emerald-200 text-gray-900" x-ref="chave">{{ session('api_key_plain') }}</code>
                 <button type="button" class="px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
                         @click="navigator.clipboard.writeText($refs.chave.innerText); copiado = true" x-text="copiado ? 'Copiada ✓' : 'Copiar'"></button>
             </div>
@@ -39,11 +39,13 @@
         @endforelse
     </ul>
 
-    <form method="POST" action="{{ route('dev.keys.store') }}" class="mt-4 flex gap-2">
+    @php($hasKey = auth()->user()->apiKeys()->exists())
+    <form method="POST" action="{{ route('dev.keys.store') }}" class="mt-4 flex flex-col sm:flex-row gap-2"
+          @if ($hasKey) onsubmit="return confirm('Gerar uma chave nova? A atual para de funcionar na hora.')" @endif>
         @csrf
-        <input name="name" required maxlength="60" placeholder="Nome da chave (ex.: meu bot de vagas)" class="flex-1 rounded-lg border-gray-300 text-sm">
-        <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">Criar chave</button>
+        <input name="name" required maxlength="60" placeholder="Nome da chave (ex.: meu bot de vagas)" class="flex-1 min-w-0 rounded-lg border-gray-300 text-sm">
+        <button class="px-4 py-2 rounded-lg text-sm {{ $hasKey ? 'border border-gray-300 hover:bg-gray-50' : 'bg-emerald-600 text-white hover:bg-emerald-700' }}">{{ $hasKey ? 'Gerar nova chave' : 'Criar chave' }}</button>
     </form>
     <x-input-error :messages="$errors->apiKey->get('name')" class="mt-2" />
-    <p class="mt-2 text-xs text-gray-400">Até {{ \App\Models\ApiKey::MAX_PER_USER }} chaves. Limite de 60 requisições por minuto e 5.000 por dia em cada uma.</p>
+    <p class="mt-2 text-xs text-gray-400">Uma chave por conta: gerar outra substitui a atual. Limite de 60 requisições por minuto e 5.000 por dia.</p>
 </section>
