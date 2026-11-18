@@ -91,21 +91,25 @@ class PublicApiTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post(route('api-keys.store'), ['name' => 'Meu bot'])->assertSessionHas('api_key_plain');
+        $this->actingAs($user)->post(route('dev.keys.store'), ['name' => 'Meu bot'])->assertSessionHas('api_key_plain');
         $plain = session('api_key_plain');
         $key = $user->apiKeys()->sole();
         $this->assertNotSame($plain, $key->key_hash);
         $this->getJson('/api/v1/estatisticas', ['Authorization' => 'Bearer '.$plain])->assertOk()->assertJsonPath('data.periodo_dias', 30);
 
         $intruder = User::factory()->create();
-        $this->actingAs($intruder)->delete(route('api-keys.destroy', $key))->assertNotFound();
+        $this->actingAs($intruder)->delete(route('dev.keys.destroy', $key))->assertNotFound();
 
-        $this->actingAs($user)->delete(route('api-keys.destroy', $key))->assertRedirect();
+        $this->actingAs($user)->delete(route('dev.keys.destroy', $key))->assertRedirect();
         $this->getJson('/api/v1/vagas', ['Authorization' => 'Bearer '.$plain])->assertUnauthorized();
     }
 
-    public function test_docs_page_is_public(): void
+    public function test_dev_page_shows_the_docs_to_everyone_and_old_addresses_redirect(): void
     {
-        $this->get(route('api.docs'))->assertOk()->assertSee('/api/v1/vagas');
+        $this->get(route('dev'))->assertOk()->assertSee('/api/v1/vagas')->assertSee('Entre');
+        $this->get('/api')->assertRedirect('/dev#api');
+        $this->get('/conectar-ia')->assertRedirect('/dev');
+
+        $this->actingAs(User::factory()->create())->get(route('dev'))->assertOk()->assertSee('Conectar minha IA')->assertSee('Criar chave');
     }
 }

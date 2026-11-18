@@ -15,12 +15,12 @@ class ApiKeyController extends Controller
         $user = $request->user();
 
         if ($user->apiKeys()->count() >= ApiKey::MAX_PER_USER) {
-            return redirect(route('ai.show').'#chaves-api')->with('api_error', 'Você já tem '.ApiKey::MAX_PER_USER.' chaves. Revogue uma para criar outra.');
+            return redirect(route('dev').'#chaves-api')->with('api_error', 'Você já tem '.ApiKey::MAX_PER_USER.' chaves. Revogue uma para criar outra.');
         }
 
         [, $plain] = ApiKey::generateFor($user, $data['name']);
 
-        return redirect(route('ai.show').'#chaves-api')->with('api_key_plain', $plain);
+        return redirect(route('dev').'#chaves-api')->with('api_key_plain', $plain);
     }
 
     public function destroy(Request $request, ApiKey $apiKey): RedirectResponse
@@ -28,6 +28,6 @@ class ApiKeyController extends Controller
         abort_unless($apiKey->user_id === $request->user()->id, 404);
         $apiKey->delete();
 
-        return redirect(route('ai.show').'#chaves-api')->with('api_status', 'Chave revogada. Quem usava essa chave perde o acesso na hora.');
+        return redirect(route('dev').'#chaves-api')->with('api_status', 'Chave revogada. Quem usava essa chave perde o acesso na hora.');
     }
 }

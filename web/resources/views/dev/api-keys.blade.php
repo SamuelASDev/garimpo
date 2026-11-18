@@ -1,7 +1,7 @@
 <section>
     <header>
         <h2 class="text-lg font-medium text-gray-900">Chaves da API</h2>
-        <p class="mt-1 text-sm text-gray-600">Use as vagas do Garimpo no seu próprio projeto. Veja a <a href="{{ route('api.docs') }}" class="underline">documentação da API</a>.</p>
+        <p class="mt-1 text-sm text-gray-600">Use as vagas do Garimpo no seu próprio projeto. Veja a <a href="#api" class="underline">documentação</a> logo abaixo.</p>
     </header>
 
     @if (session('api_key_plain'))
@@ -29,7 +29,7 @@
                     <p class="font-medium text-gray-900 truncate">{{ $key->name }}</p>
                     <p class="text-xs text-gray-500"><code>{{ $key->prefix }}…</code> · criada {{ $key->created_at->diffForHumans() }} · {{ $key->last_used_at ? 'usada '.$key->last_used_at->diffForHumans() : 'nunca usada' }}</p>
                 </div>
-                <form method="POST" action="{{ route('api-keys.destroy', $key) }}" onsubmit="return confirm('Revogar esta chave? Quem usa ela perde o acesso na hora.')">
+                <form method="POST" action="{{ route('dev.keys.destroy', $key) }}" onsubmit="return confirm('Revogar esta chave? Quem usa ela perde o acesso na hora.')">
                     @csrf @method('DELETE')
                     <button class="text-red-500 hover:underline text-xs">Revogar</button>
                 </form>
@@ -39,7 +39,7 @@
         @endforelse
     </ul>
 
-    <form method="POST" action="{{ route('api-keys.store') }}" class="mt-4 flex gap-2">
+    <form method="POST" action="{{ route('dev.keys.store') }}" class="mt-4 flex gap-2">
         @csrf
         <input name="name" required maxlength="60" placeholder="Nome da chave (ex.: meu bot de vagas)" class="flex-1 rounded-lg border-gray-300 text-sm">
         <button class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm hover:bg-emerald-700">Criar chave</button>

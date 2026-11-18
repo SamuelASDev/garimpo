@@ -168,7 +168,7 @@
                     remotas", "adapte meu currículo para essa vaga", "o que posso melhorar?". Ela segue as mesmas regras de escrita
                     do site, e você pode desconectar quando quiser.
                 </p>
-                <a href="{{ auth()->check() ? route('ai.show') : route('register') }}" class="mt-4 inline-block text-sm text-emerald-700 font-medium hover:underline">
+                <a href="{{ auth()->check() ? route('dev') : route('register') }}" class="mt-4 inline-block text-sm text-emerald-700 font-medium hover:underline">
                     {{ auth()->check() ? 'Conectar minha IA →' : 'Crie uma conta para conectar →' }}
                 </a>
             </div>

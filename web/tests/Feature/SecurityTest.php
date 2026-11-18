@@ -64,7 +64,7 @@ class SecurityTest extends TestCase
 
     public function test_pages_require_login(): void
     {
-        foreach (['/curriculos', '/curriculo', '/candidaturas', '/conectar-ia', '/conta/meus-dados'] as $url) {
+        foreach (['/curriculos', '/curriculo', '/candidaturas', '/conta/meus-dados'] as $url) {
             $this->get($url)->assertRedirect('/login');
         }
     }

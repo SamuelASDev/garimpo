@@ -29,7 +29,7 @@
             só na resposta. A camada gratuita de alguns provedores pode usar o conteúdo para melhorar seus modelos.
             Base legal: seu consentimento específico (art. 7º, I e art. 33, VIII), que pode ser retirado a qualquer momento.</p>
         <p>Se você conectar <strong>sua própria IA</strong> (Claude, ChatGPT, Codex…), é você quem autoriza esse app a acessar seus dados;
-            o tratamento feito por ele segue a política do provedor que você escolheu. Você pode desconectar na Seção dev.</p>
+            o tratamento feito por ele segue a política do provedor que você escolheu. Você pode desconectar no menu Dev.</p>
 
         <h2>4. Vagas exibidas</h2>
         <p>As vagas vêm de páginas públicas de sites de emprego, sempre com link para o anúncio original. Removemos e-mails e telefones

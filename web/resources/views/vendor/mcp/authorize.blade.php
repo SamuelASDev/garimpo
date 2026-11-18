@@ -41,7 +41,7 @@
 
             <ul class="text-gray-600 space-y-1.5">
                 <li class="flex gap-2"><span class="text-emerald-600">✓</span> Nada é alterado sem você pedir para a IA.</li>
-                <li class="flex gap-2"><span class="text-emerald-600">✓</span> Você pode desconectar quando quiser em <strong>Seção dev</strong>.</li>
+                <li class="flex gap-2"><span class="text-emerald-600">✓</span> Você pode desconectar quando quiser no menu <strong>Dev</strong>.</li>
             </ul>
         </div>
 

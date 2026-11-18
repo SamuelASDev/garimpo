@@ -31,8 +31,8 @@ class AiConnectionController extends Controller
 
     public function show(Request $request): View
     {
-        return view('ai.show', [
-            'tokens' => $request->user()->tokens()->with('client')->where('revoked', false)->where('expires_at', '>', now())->latest()->get(),
+        return view('dev.index', [
+            'tokens' => $request->user()?->tokens()->with('client')->where('revoked', false)->where('expires_at', '>', now())->latest()->get() ?? collect(),
             'mcpUrl' => url('/mcp'),
         ]);
     }
@@ -50,7 +50,7 @@ class AiConnectionController extends Controller
         $name = trim(self::APPS[$data['app']].' · '.($data['label'] ?: 'sem nome'));
         $token = $request->user()->createToken(mb_substr($name, 0, 80), [Registrar::OAUTH_SCOPE]);
 
-        return redirect()->route('ai.show')->with([
+        return redirect()->to(route('dev').'#ia')->with([
             'token' => $token->accessToken,
             'token_app' => $data['app'],
             'status' => "Conexão \"$name\" criada. Válida até ".now()->addDays((int) $data['days'])->format('d/m/Y').'.',
@@ -65,7 +65,7 @@ class AiConnectionController extends Controller
         // Sem isso, um app OAuth renovaria o acesso sozinho com o refresh token.
         DB::table('oauth_refresh_tokens')->where('access_token_id', $token->id)->update(['revoked' => true]);
 
-        return redirect()->route('ai.show')->with('status', 'Conexão desconectada.');
+        return redirect()->to(route('dev').'#ia')->with('status', 'Conexão desconectada.');
     }
 
     /** Desconecta todas. */
@@ -75,6 +75,6 @@ class AiConnectionController extends Controller
         $request->user()->tokens()->update(['revoked' => true]);
         DB::table('oauth_refresh_tokens')->whereIn('access_token_id', $ids)->update(['revoked' => true]);
 
-        return redirect()->route('ai.show')->with('status', 'Todas as IAs foram desconectadas.');
+        return redirect()->to(route('dev').'#ia')->with('status', 'Todas as IAs foram desconectadas.');
     }
 }

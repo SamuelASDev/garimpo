@@ -70,10 +70,10 @@ class ApplicationsAndMcpTest extends TestCase
         Artisan::call('passport:client', ['--personal' => true, '--name' => 'Garimpo', '--provider' => 'users', '--no-interaction' => true]);
         $user = User::factory()->create();
 
-        $this->actingAs($user)->post(route('ai.store'), ['app' => 'claude-code', 'label' => 'notebook', 'days' => 7])->assertRedirect(route('ai.show'));
+        $this->actingAs($user)->post(route('dev.ai.store'), ['app' => 'claude-code', 'label' => 'notebook', 'days' => 7])->assertRedirect(route('dev').'#ia');
         $token = session('token');
         $this->assertNotEmpty($token);
-        $this->actingAs($user)->get(route('ai.show'))->assertOk()->assertSee('claude mcp add')->assertSee('IAs conectadas agora: 1')->assertSee('Claude Code · notebook');
+        $this->actingAs($user)->get(route('dev'))->assertOk()->assertSee('claude mcp add')->assertSee('IAs conectadas agora: 1')->assertSee('Claude Code · notebook');
         $this->assertTrue($user->tokens()->sole()->expires_at->between(now()->addDays(6), now()->addDays(8)));
 
         auth()->forgetGuards();
@@ -139,12 +139,12 @@ class ApplicationsAndMcpTest extends TestCase
         $keep = $user->createToken('Codex · pc', ['mcp:use']);
         $drop = $user->createToken('Cursor · trabalho', ['mcp:use']);
 
-        $this->actingAs($user)->delete(route('ai.revoke', $drop->token->id))->assertRedirect(route('ai.show'));
+        $this->actingAs($user)->delete(route('dev.ai.revoke', $drop->token->id))->assertRedirect(route('dev').'#ia');
         $this->assertTrue($drop->token->fresh()->revoked);
         $this->assertFalse($keep->token->fresh()->revoked);
 
         $other = User::factory()->create();
-        $this->actingAs($other)->delete(route('ai.revoke', $keep->token->id))->assertNotFound();
+        $this->actingAs($other)->delete(route('dev.ai.revoke', $keep->token->id))->assertNotFound();
 
         auth()->forgetGuards();
         $this->withHeaders(['Authorization' => 'Bearer '.$drop->accessToken])

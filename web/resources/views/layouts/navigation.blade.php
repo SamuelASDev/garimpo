@@ -13,7 +13,7 @@
                         <x-nav-link :href="route('resumes.index')" :active="request()->routeIs('resume.*', 'resumes.*', 'jobs.resume')">Currículos</x-nav-link>
                         <x-nav-link :href="route('applications.index')" :active="request()->routeIs('applications.*')">Candidaturas</x-nav-link>
                         <x-nav-link :href="route('alerts.index')" :active="request()->routeIs('alerts.*')">Alertas</x-nav-link>
-                        <x-nav-link :href="route('ai.show')" :active="request()->routeIs('ai.*')">Seção dev</x-nav-link>
+                        <x-nav-link :href="route('dev')" :active="request()->routeIs('dev', 'dev.*')">Dev</x-nav-link>
                         @can('admin')
                             <x-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">Admin</x-nav-link>
                         @endcan
@@ -59,7 +59,7 @@
             <x-responsive-nav-link :href="route('resumes.index')" :active="request()->routeIs('resume.*', 'resumes.*', 'jobs.resume')">Currículos</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('applications.index')" :active="request()->routeIs('applications.*')">Candidaturas</x-responsive-nav-link>
                         <x-responsive-nav-link :href="route('alerts.index')" :active="request()->routeIs('alerts.*')">Alertas</x-responsive-nav-link>
-                        <x-responsive-nav-link :href="route('ai.show')" :active="request()->routeIs('ai.*')">Seção dev</x-responsive-nav-link>
+                        <x-responsive-nav-link :href="route('dev')" :active="request()->routeIs('dev', 'dev.*')">Dev</x-responsive-nav-link>
             @can('admin')
                 <x-responsive-nav-link :href="route('admin.index')" :active="request()->routeIs('admin.*')">Admin</x-responsive-nav-link>
             @endcan

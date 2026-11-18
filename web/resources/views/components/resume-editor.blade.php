@@ -123,7 +123,7 @@
                           class="flex-1 rounded-lg border-gray-300 text-sm resize-none"></textarea>
                 <button class="px-3 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50" :disabled="chatBusy || !chatInput.trim()" title="Enviar">➤</button>
             </form>
-            <p class="px-5 pb-3 text-[11px] text-gray-400">IA grátis: 40 mensagens por dia. Com <a href="{{ route('ai.show') }}" class="underline">sua própria IA</a>, sem limite.</p>
+            <p class="px-5 pb-3 text-[11px] text-gray-400">IA grátis: 40 mensagens por dia. Com <a href="{{ route('dev') }}" class="underline">sua própria IA</a>, sem limite.</p>
         </div>
     </aside>
 </div>
