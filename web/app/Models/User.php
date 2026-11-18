@@ -45,6 +45,11 @@ class User extends Authenticatable implements MustVerifyEmail, OAuthenticatable
         return $this->hasOne(Resume::class);
     }
 
+    public function apiKeys(): HasMany
+    {
+        return $this->hasMany(ApiKey::class);
+    }
+
     public function resumeVariants(): HasMany
     {
         return $this->hasMany(ResumeVariant::class);

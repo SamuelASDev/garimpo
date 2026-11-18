@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\AdminController;
 use App\Http\Controllers\AiConnectionController;
+use App\Http\Controllers\ApiKeyController;
 use App\Http\Controllers\CityController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\HomeController;
@@ -20,6 +21,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', HomeController::class)->name('home');
 Route::get('/vagas', [JobController::class, 'index'])->name('jobs.index');
+Route::view('/api', 'api.docs')->name('api.docs');
 Route::get('/vagas/{job}', [JobController::class, 'show'])->name('jobs.show');
 Route::get('/privacidade', [LegalController::class, 'privacy'])->name('legal.privacy');
 Route::get('/estatisticas', StatsController::class)->name('stats');
@@ -35,6 +37,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/curriculo', [ResumeController::class, 'edit'])->name('resume.edit');
     Route::put('/curriculo', [ResumeController::class, 'update'])->name('resume.update');
     Route::post('/curriculo/importar', [ResumeController::class, 'import'])->middleware('throttle:10,1')->name('resume.import');
+    Route::post('/conta/chaves-api', [ApiKeyController::class, 'store'])->middleware('throttle:10,1')->name('api-keys.store');
+    Route::delete('/conta/chaves-api/{apiKey}', [ApiKeyController::class, 'destroy'])->name('api-keys.destroy');
     Route::post('/curriculos/variacoes', [ResumeVariantController::class, 'store'])->middleware('throttle:20,1')->name('variants.store');
     Route::get('/curriculos/variacoes/{variant}', [ResumeVariantController::class, 'edit'])->name('variants.edit');
     Route::put('/curriculos/variacoes/{variant}', [ResumeVariantController::class, 'update'])->name('variants.update');

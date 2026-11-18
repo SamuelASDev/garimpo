@@ -14,7 +14,8 @@
             <p class="mt-1 text-xs text-gray-400">
                 {{ config('app.name') }} · open source (MIT) ·
                 <a href="{{ route('legal.privacy') }}" class="hover:text-gray-600">Privacidade</a> ·
-                <a href="{{ route('legal.terms') }}" class="hover:text-gray-600">Termos</a>
+                <a href="{{ route('legal.terms') }}" class="hover:text-gray-600">Termos</a> ·
+                <a href="{{ route('api.docs') }}" class="hover:text-gray-600">API</a>
             </p>
         </div>
         <div class="flex items-center gap-2">

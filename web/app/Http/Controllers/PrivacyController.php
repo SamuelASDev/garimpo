@@ -60,6 +60,12 @@ class PrivacyController extends Controller
                 'html' => $v->html,
                 'atualizado_em' => $v->updated_at?->toIso8601String(),
             ]),
+            'chaves_de_api' => $user->apiKeys()->get()->map(fn ($k): array => [
+                'nome' => $k->name,
+                'inicio' => $k->prefix,
+                'criada_em' => $k->created_at?->toIso8601String(),
+                'ultimo_uso' => $k->last_used_at?->toIso8601String(),
+            ]),
             'candidaturas' => $user->jobApplications()->get(['title', 'company', 'url', 'status', 'applied_at', 'last_contact_at', 'next_step', 'notes']),
             'conexoes_de_ia' => $user->tokens()->with('client:id,name')->get()->map(fn ($t): array => [
                 'nome' => $t->name,
