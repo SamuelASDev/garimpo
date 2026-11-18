@@ -6,7 +6,8 @@
 <x-app-layout>
     <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6" x-data="{ copiado: '' }">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Conectar minha IA</h1>
+            <p class="text-xs uppercase tracking-widest text-emerald-700 font-semibold">Seção dev</p>
+            <h1 class="mt-1 text-2xl font-bold text-gray-900">Conectar minha IA</h1>
             <p class="text-gray-500 mt-1 text-sm">
                 Já usa Claude, ChatGPT, Codex ou Cursor? Conecte ao Garimpo e ela busca vagas, lê e adapta seus currículos
                 e acompanha suas candidaturas, sem o limite da IA grátis. Você escolhe quem conecta, por quanto tempo, e desconecta quando quiser.
@@ -124,6 +125,13 @@ codex mcp add garimpo --url {{ $mcpUrl }} --bearer-token-env-var GARIMPO_TOKEN</
                     <button class="text-red-600 hover:underline">Desconectar todas</button>
                 </form>
             @endif
+        </div>
+
+        {{-- API pública: chaves para usar as vagas em outros projetos --}}
+        <div id="chaves-api" class="pt-6 border-t border-gray-200">
+            <div class="bg-white rounded-xl border border-gray-200 p-5 sm:p-6">
+                @include('dev.api-keys')
+            </div>
         </div>
     </div>
 </x-app-layout>

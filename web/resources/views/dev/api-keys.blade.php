@@ -23,7 +23,7 @@
     @endif
 
     <ul class="mt-4 divide-y divide-gray-100 text-sm">
-        @forelse ($user->apiKeys()->latest()->get() as $key)
+        @forelse (auth()->user()->apiKeys()->latest()->get() as $key)
             <li class="py-3 flex items-center justify-between gap-3">
                 <div class="min-w-0">
                     <p class="font-medium text-gray-900 truncate">{{ $key->name }}</p>

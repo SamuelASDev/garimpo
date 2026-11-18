@@ -18,7 +18,7 @@
         <ul>
             <li>Você é responsável pela veracidade do que coloca no currículo. A IA é instruída a não inventar experiências, mas pode errar: revise sempre antes de enviar.</li>
             <li>A IA grátis tem limites diários e pode ficar indisponível. Ela só é usada com a sua autorização (veja a Política de Privacidade).</li>
-            <li>Ao conectar sua própria IA, você responde pelo que ela fizer na sua conta. Desconecte em "Conectar IA" quando quiser.</li>
+            <li>Ao conectar sua própria IA, você responde pelo que ela fizer na sua conta. Desconecte na Seção dev quando quiser.</li>
         </ul>
 
         <h2>4. Uso correto</h2>

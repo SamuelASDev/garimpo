@@ -21,7 +21,7 @@ class AuthenticateApiKey
         if (! $key) {
             return response()->json([
                 'erro' => 'Chave de API ausente ou inválida.',
-                'como_resolver' => 'Crie uma chave em '.route('profile.edit').' e envie no cabeçalho Authorization: Bearer <sua-chave>. Documentação: '.route('api.docs'),
+                'como_resolver' => 'Crie uma chave em '.route('ai.show').'#chaves-api'.' e envie no cabeçalho Authorization: Bearer <sua-chave>. Documentação: '.route('api.docs'),
             ], 401);
         }
 

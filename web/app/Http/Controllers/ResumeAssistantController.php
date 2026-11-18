@@ -153,7 +153,7 @@ class ResumeAssistantController extends Controller
         $key = 'assistant:'.$request->user()->id;
         if (RateLimiter::tooManyAttempts($key, self::DAILY_MESSAGES)) {
             return response()->json([
-                'reply' => 'Você usou as '.self::DAILY_MESSAGES.' mensagens grátis de hoje. Conecte sua própria IA (menu "Conectar IA") para continuar sem limite.',
+                'reply' => 'Você usou as '.self::DAILY_MESSAGES.' mensagens grátis de hoje. Conecte sua própria IA (menu Seção dev) para continuar sem limite.',
                 'message' => 'Limite diário da IA grátis atingido.',
                 'html' => null,
             ], 429);

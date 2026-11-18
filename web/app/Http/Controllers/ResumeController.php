@@ -64,7 +64,7 @@ class ResumeController extends Controller
 
         $key = 'import:'.$request->user()->id;
         if (RateLimiter::tooManyAttempts($key, 10)) {
-            return response()->json(['html' => $template->fromPlainText($data['text']), 'message' => 'Limite diário da IA grátis atingido: importei o texto sem formatar. Use "Conectar IA" para formatar com a sua IA.']);
+            return response()->json(['html' => $template->fromPlainText($data['text']), 'message' => 'Limite diário da IA grátis atingido: importei o texto sem formatar. Conecte sua IA na Seção dev para formatar sem limite.']);
         }
 
         try {

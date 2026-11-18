@@ -274,7 +274,7 @@ IMPORTANTE: [EMAIL_1], [TELEFONE_2], [PERFIL_3] e marcadores parecidos são os d
 
         Log::error('IA grátis: todos os provedores falharam', ['campo' => $requiredKey]);
 
-        throw new RuntimeException('A IA grátis está indisponível agora. Tente de novo em alguns minutos ou use sua própria IA (menu "Conectar IA").');
+        throw new RuntimeException('A IA grátis está indisponível agora. Tente de novo em alguns minutos ou use sua própria IA (menu Seção dev).');
     }
 
     private function gemini(string $prompt): string

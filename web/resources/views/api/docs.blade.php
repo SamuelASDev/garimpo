@@ -28,8 +28,8 @@
 
         <h2 class="mt-10 text-xl font-semibold text-gray-900">1. Crie sua chave</h2>
         <p class="mt-2 text-sm text-gray-600">
-            @auth Vá em <a href="{{ route('profile.edit') }}#chaves-api" class="text-emerald-700 underline">Minha conta → Chaves da API</a> e clique em <strong>Criar chave</strong>.
-            @else <a href="{{ route('register') }}" class="text-emerald-700 underline">Crie uma conta grátis</a> e depois vá em Minha conta → Chaves da API.
+            @auth Vá em <a href="{{ route('ai.show') }}#chaves-api" class="text-emerald-700 underline">Seção dev → Chaves da API</a> e clique em <strong>Criar chave</strong>.
+            @else <a href="{{ route('register') }}" class="text-emerald-700 underline">Crie uma conta grátis</a> e depois vá em Seção dev → Chaves da API.
             @endauth
             A chave aparece uma vez só: guarde em lugar seguro e use apenas no servidor (nunca no JavaScript do navegador).
         </p>

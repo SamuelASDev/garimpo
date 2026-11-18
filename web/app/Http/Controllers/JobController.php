@@ -70,7 +70,7 @@ class JobController extends Controller
                 throw new \RuntimeException('Você ainda não autorizou a IA grátis. Ative em Minha conta → Privacidade (seu currículo vai sem telefone, e-mail e links).');
             }
             if (RateLimiter::tooManyAttempts($key, 5)) {
-                throw new \RuntimeException('Limite de 5 currículos por dia com a IA grátis atingido. Use "Conectar IA" para gerar sem limite.');
+                throw new \RuntimeException('Limite de 5 currículos por dia com a IA grátis atingido. Conecte sua IA na Seção dev para gerar sem limite.');
             }
             $result = $writer->tailor($user->resume, $job, $matcher->match($user->resume, $job));
             RateLimiter::hit($key, 86400);
