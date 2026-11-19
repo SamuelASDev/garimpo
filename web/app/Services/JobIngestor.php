@@ -81,6 +81,12 @@ class JobIngestor
             $fingerprint = self::fingerprint($item['title'], $item['company'] ?? '');
             $existing = JobPosting::where('url', $item['url'])->first() ?? JobPosting::where('fingerprint', $fingerprint)->first();
 
+            // Mesmo cargo e empresa, mas outra cidade ou outra descrição: é outra vaga e entra com fingerprint próprio.
+            if ($existing && $existing->url !== $item['url'] && JobDeduplicator::clearlyDifferent([...$item, 'description' => $description], $existing->only(['title', 'location', 'description']))) {
+                $fingerprint = hash('sha256', $fingerprint.'|'.$item['url']);
+                $existing = JobPosting::where('fingerprint', $fingerprint)->first();
+            }
+
             if ($existing) {
                 // Mesma vaga, mas agora com a descrição completa: completa a que estava só com resumo.
                 if ($existing->url === $item['url'] && mb_strlen((string) $existing->description) < self::SHORT_DESCRIPTION && mb_strlen($description) > mb_strlen((string) $existing->description)) {
@@ -98,12 +104,20 @@ class JobIngestor
                 continue;
             }
 
+            // Mesma vaga vinda de outro site com o nome escrito diferente ("BEES" x "BEES Brasil", "PL" x "Pleno").
+            if (JobDeduplicator::findExisting([...$item, 'description' => $description])) {
+                $stats['duplicated']++;
+
+                continue;
+            }
+
             JobPosting::create([
                 'source' => $item['source'],
                 'url' => $item['url'],
                 'fingerprint' => $fingerprint,
                 'title' => Str::limit($item['title'], 250, ''),
                 'company' => $item['company'] ?? null,
+                'company_key' => isset($item['company']) ? mb_substr(JobDeduplicator::companyKey($item['company']), 0, 120) : null,
                 'location' => $item['location'] ?? null,
                 ...Locations::parse($item['location'] ?? null),
                 ...$this->workMode($item, $description),

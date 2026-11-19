@@ -10,7 +10,7 @@ use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Attributes\Description;
 use Laravel\Mcp\Server\Tool;
 
-#[Description('Retorna o texto do currículo principal do usuário, do currículo adaptado de uma vaga (job_id) ou de uma variação (variant_id, veja list-resumes). Para alterar: save-resume (principal) ou save-tailored-resume (vaga); variações o usuário edita no site.')]
+#[Description('Retorna o texto do currículo principal do usuário, do currículo adaptado de uma vaga (job_id) ou de uma variação (variant_id, veja list-resumes). Para alterar: save-resume (principal) ou save-tailored-resume (vaga) ou save-variant (variação).')]
 class GetResume extends Tool
 {
     public function handle(Request $request): Response

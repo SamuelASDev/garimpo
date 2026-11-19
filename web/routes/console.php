@@ -2,6 +2,7 @@
 
 use App\Models\JobPosting;
 use App\Models\User;
+use App\Services\JobDeduplicator;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -47,6 +48,23 @@ Artisan::command('garimpo:limpar', function () {
 
     $this->info("Limpeza: {$jobs} vagas com mais de {$days} dias e {$cache} itens de cache vencidos apagados.");
 })->purpose('Apaga vagas antigas e o cache vencido');
+
+// Junta vagas repetidas que entraram antes do detector (mesma vaga com o nome escrito diferente).
+// Sem --apagar só lista: php artisan garimpo:deduplicar
+Artisan::command('garimpo:deduplicar {--apagar}', function () {
+    $pairs = JobDeduplicator::duplicatePairs();
+    foreach ($pairs as [$keep, $drop]) {
+        $this->line("#{$drop->id} {$drop->title} | {$drop->company}  ->  fica #{$keep->id} {$keep->title} | {$keep->company}");
+    }
+
+    if (! $this->option('apagar')) {
+        return $this->info(count($pairs).' repetidas encontradas. Nada foi apagado; rode com --apagar para remover.');
+    }
+
+    JobPosting::whereIn('id', array_map(fn (array $pair): int => $pair[1]->id, $pairs))->delete();
+    Cache::forget('home.numbers');
+    $this->info(count($pairs).' vagas repetidas apagadas.');
+})->purpose('Lista (ou apaga, com --apagar) vagas repetidas');
 
 // Pede ao GitHub Actions para rodar a coleta agora: php artisan garimpo:coletar
 Artisan::command('garimpo:coletar', function () {

@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Mcp\Servers\GarimpoServer;
 use App\Mcp\Tools\GetResume;
 use App\Mcp\Tools\ListResumes;
+use App\Mcp\Tools\SaveVariant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -97,5 +98,29 @@ class ResumeVariantTest extends TestCase
             ->assertOk()->assertSee('Laravel e APIs');
         GarimpoServer::actingAs($user)->tool(GetResume::class, ['variant_id' => $other->id])
             ->assertHasErrors();
+    }
+
+    public function test_connected_ai_creates_and_updates_a_variant_without_touching_the_main_resume(): void
+    {
+        $user = User::factory()->create();
+        $user->resume()->create(['html' => '<p>principal intacto</p>']);
+        $data = ['nome' => 'Fulano', 'objetivo' => ['cargo' => 'Desenvolvedor Júnior', 'texto' => 'Vagas com JavaScript e Python.'], 'habilidades_tecnicas' => ['JavaScript', 'Python']];
+
+        GarimpoServer::actingAs($user)->tool(SaveVariant::class, ['name' => 'Dev Júnior JS', 'category' => 'Full stack', 'description' => 'Vaga do deVagas', 'data' => $data])
+            ->assertOk()->assertSee('criada');
+        $variant = $user->resumeVariants()->sole();
+        $this->assertSame('Dev Júnior JS', $variant->name);
+        $this->assertStringContainsString('JavaScript', $variant->html);
+
+        GarimpoServer::actingAs($user)->tool(SaveVariant::class, ['variant_id' => $variant->id, 'name' => 'Dev Júnior JS e Python', 'data' => $data])
+            ->assertOk()->assertSee('atualizada');
+        $this->assertSame('Dev Júnior JS e Python', $variant->fresh()->name);
+        $this->assertSame(1, $user->resumeVariants()->count());
+        $this->assertSame('<p>principal intacto</p>', $user->resume->fresh()->html);
+
+        $other = User::factory()->create()->resumeVariants()->create(['name' => 'Alheia', 'html' => '<p>x</p>']);
+        GarimpoServer::actingAs($user)->tool(SaveVariant::class, ['variant_id' => $other->id, 'name' => 'Invadida', 'data' => $data])
+            ->assertHasErrors();
+        $this->assertSame('Alheia', $other->fresh()->name);
     }
 }
